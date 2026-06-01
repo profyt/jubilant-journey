@@ -1,0 +1,46 @@
+{
+  "name": "worker-sync-db",
+  "version": "0.1.0",
+  "description": "Typed IndexedDB in SharedWorker with multi-tab sync and offline-first remote sync",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./shared-worker": {
+      "import": "./dist/shared-worker/entry.js",
+      "types": "./dist/shared-worker/entry.d.ts"
+    },
+    "./dedicated-worker": {
+      "import": "./dist/dedicated-worker/entry.js",
+      "types": "./dist/dedicated-worker/entry.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "example:dev": "npm run dev --prefix examples/vite-react-todos",
+    "example:build": "npm run build --prefix examples/vite-react-todos"
+  },
+  "dependencies": {
+    "idb": "^8.0.3"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "^6.0.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  },
+  "peerDependencies": {
+    "typescript": ">=5"
+  },
+  "license": "MIT"
+}
