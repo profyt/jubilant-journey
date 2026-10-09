@@ -32,6 +32,7 @@ export default defineConfig({
       input: {
         main: path.resolve(__dirname, 'index.html'),
         bench: path.resolve(__dirname, 'bench.html'),
+        marketingBench: path.resolve(__dirname, 'marketing-bench.html'),
       },
     },
   },

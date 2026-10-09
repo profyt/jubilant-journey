@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>worker-sync-db — marketing bench</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+      }
+      body {
+        margin: 1.5rem;
+        max-width: 42rem;
+        line-height: 1.45;
+      }
+      #status {
+        font-variant-numeric: tabular-nums;
+        white-space: pre-wrap;
+      }
+      .err {
+        color: #b00020;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Marketing benchmark</h1>
+    <p>
+      Comparable Chromium numbers: <strong>worker-sync-db</strong> (SharedWorker +
+      IndexedDB) vs <strong>Dexie</strong> (same IndexedDB layer, main-thread /
+      single-tab). For Playwright / README — not a CI soft-fail suite.
+    </p>
+    <p id="status">booting…</p>
+    <script type="module" src="/src/bench/marketing.ts"></script>
+  </body>
+</html>
