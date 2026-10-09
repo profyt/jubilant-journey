@@ -4,43 +4,76 @@
   "description": "Typed IndexedDB in SharedWorker with multi-tab sync and offline-first remote sync",
   "type": "module",
   "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "sideEffects": [
+    "./dist/shared-worker/entry.js",
+    "./dist/dedicated-worker/entry.js"
+  ],
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.js"
     },
     "./shared-worker": {
-      "import": "./dist/shared-worker/entry.js",
-      "types": "./dist/shared-worker/entry.d.ts"
+      "types": "./dist/shared-worker/entry.d.ts",
+      "import": "./dist/shared-worker/entry.js"
     },
     "./dedicated-worker": {
-      "import": "./dist/dedicated-worker/entry.js",
-      "types": "./dist/dedicated-worker/entry.d.ts"
-    }
+      "types": "./dist/dedicated-worker/entry.d.ts",
+      "import": "./dist/dedicated-worker/entry.js"
+    },
+    "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build",
+    "pack:dry": "npm run build && npm pack --dry-run",
     "example:dev": "npm run dev --prefix examples/vite-react-todos",
     "example:build": "npm run build --prefix examples/vite-react-todos"
   },
   "dependencies": {
     "idb": "^8.0.3"
   },
+  "peerDependencies": {
+    "react": ">=18",
+    "typescript": ">=5"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "typescript": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@testing-library/react": "^16.3.0",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
     "fake-indexeddb": "^6.0.0",
+    "jsdom": "^26.1.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
     "tsup": "^8.5.0",
     "typescript": "^5.8.3",
     "vitest": "^3.2.4"
   },
-  "peerDependencies": {
-    "typescript": ">=5"
+  "engines": {
+    "node": ">=18"
   },
   "keywords": [
     "indexeddb",
@@ -49,11 +82,17 @@
     "sync",
     "multi-tab",
     "typescript",
-    "local-first"
+    "local-first",
+    "react"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/profyt/jubilant-journey.git"
+    "url": "git+https://github.com/profyt/jubilant-journey.git"
   },
+  "bugs": {
+    "url": "https://github.com/profyt/jubilant-journey/issues"
+  },
+  "homepage": "https://github.com/profyt/jubilant-journey#readme",
+  "author": "Dmitrii Novoselov",
   "license": "MIT"
 }

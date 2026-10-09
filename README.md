@@ -201,8 +201,41 @@ Vite, Webpack, and monorepo notes: [docs/bundlers.md](docs/bundlers.md)
 | Import | Description |
 |--------|-------------|
 | `worker-sync-db` | Client API (`createDatabase`, types) |
+| `worker-sync-db/react` | React hooks (`useQuery`, `useSubscribe`, `useSyncStatus`, `DatabaseProvider`) |
 | `worker-sync-db/shared-worker` | SharedWorker entry bundle |
 | `worker-sync-db/dedicated-worker` | Dedicated worker entry bundle |
+
+## React
+
+```typescript
+import { DatabaseProvider, useQuery, useSyncStatus } from 'worker-sync-db/react';
+
+const { data, loading } = useQuery(db, 'todos');
+const status = useSyncStatus(db);
+```
+
+See [docs/react.md](docs/react.md).
+
+## Live demo (GitHub Pages)
+
+After Pages is enabled for this repo, the demo is at:
+
+**https://profyt.github.io/jubilant-journey/**
+
+Deploy workflow: [`.github/workflows/pages.yml`](.github/workflows/pages.yml) (builds `examples/vite-react-todos` on push to `main`).
+
+**One-time setup:** GitHub → **Settings → Pages → Source: GitHub Actions**. Until that is selected, the workflow uploads an artifact but cannot publish a public URL.
+
+Locally: `npm run build && npm run example:dev`.
+
+## Publishing to npm
+
+Package is publish-ready (`exports`, `files`, `LICENSE`, `CHANGELOG`, `prepublishOnly`). Exact commands: [docs/publishing.md](docs/publishing.md).
+
+```bash
+npm run prepublishOnly
+npm publish --access public
+```
 
 ## Documentation
 
@@ -210,10 +243,12 @@ Vite, Webpack, and monorepo notes: [docs/bundlers.md](docs/bundlers.md)
 |-------|--------|
 | [getting-started.md](docs/getting-started.md) | Install, schema, first app |
 | [api.md](docs/api.md) | Full API reference |
+| [react.md](docs/react.md) | React hooks |
 | [sync.md](docs/sync.md) | Push/pull, leader tab, backend contract |
 | [bundlers.md](docs/bundlers.md) | Vite / Webpack configuration |
 | [architecture.md](docs/architecture.md) | Components, RPC protocol |
 | [troubleshooting.md](docs/troubleshooting.md) | Common errors, DevTools |
+| [publishing.md](docs/publishing.md) | npm publish checklist |
 
 ## Limitations (v1)
 

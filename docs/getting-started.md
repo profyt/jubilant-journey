@@ -13,9 +13,9 @@ Peer dependency: TypeScript 5+ (for consumer type inference).
 A schema maps collection names to IndexedDB object stores:
 
 ```typescript
-import type { CollectionSchema } from 'worker-sync-db';
+import { defineSchema } from 'worker-sync-db';
 
-export const schema = {
+export const schema = defineSchema({
   todos: {
     keyPath: 'id',
     indexes: {
@@ -25,13 +25,13 @@ export const schema = {
   notes: {
     keyPath: 'id',
   },
-} as const satisfies CollectionSchema;
+});
 ```
 
 - `keyPath` — primary key field on each document (usually `'id'`).
 - `indexes` — optional named indexes for `query({ index: 'byStatus', range: ... })`.
 
-Use `as const` so collection names are literal types in `db.put('todos', ...)`.
+`defineSchema` preserves literal collection names for typed `db.put('todos', ...)`.
 
 ## Open a database
 

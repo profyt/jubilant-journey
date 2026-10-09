@@ -2,43 +2,31 @@ import {
   createContext,
   useContext,
   useEffect,
-  useMemo,
   useState,
   type ReactNode,
 } from 'react';
+import { createDatabase, type DatabaseClient } from 'worker-sync-db';
 import {
-  createDatabase,
-  type DatabaseClient,
-  type SyncStatus,
-} from 'worker-sync-db';
+  DatabaseProvider as WsdProvider,
+  useDatabase as useWsdDatabase,
+  useSyncStatus,
+} from 'worker-sync-db/react';
 import { mockAdapter } from '../sync/mockAdapter.js';
 import { schema } from './schema.js';
+import { dedicatedWorkerUrl, sharedWorkerUrl } from './workers.js';
 
-type AppDatabase = DatabaseClient<typeof schema>;
-
-interface DatabaseContextValue {
-  db: AppDatabase | null;
-  error: string | null;
-  syncStatus: SyncStatus | null;
-}
-
-const DatabaseContext = createContext<DatabaseContextValue>({
-  db: null,
-  error: null,
-  syncStatus: null,
-});
+export type AppDatabase = DatabaseClient<typeof schema>;
 
 const DB_NAME = 'vite-react-todos';
+const BootErrorContext = createContext<string | null>(null);
 
 export function DatabaseProvider({ children }: { children: ReactNode }) {
   const [db, setDb] = useState<AppDatabase | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
 
   useEffect(() => {
     let disposed = false;
     let client: AppDatabase | null = null;
-    let unsubStatus: (() => void) | undefined;
 
     void (async () => {
       try {
@@ -46,6 +34,8 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
           schema,
           dbName: DB_NAME,
           mode: 'auto',
+          sharedWorker: sharedWorkerUrl,
+          dedicatedWorker: dedicatedWorkerUrl,
           remote: mockAdapter,
           onConflict: ({ opId, reason }) => {
             console.warn('[sync conflict]', opId, reason);
@@ -58,13 +48,6 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
         }
 
         client = opened;
-        unsubStatus = opened.onSyncStatusChange(setSyncStatus);
-        const status = await opened.getSyncStatus();
-        if (disposed) {
-          opened.close();
-          return;
-        }
-        setSyncStatus(status);
         setDb(opened);
       } catch (err) {
         if (!disposed) {
@@ -75,23 +58,20 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
 
     return () => {
       disposed = true;
-      unsubStatus?.();
       client?.close();
     };
   }, []);
 
-  const value = useMemo(
-    () => ({ db, error, syncStatus }),
-    [db, error, syncStatus],
-  );
-
   return (
-    <DatabaseContext.Provider value={value}>
-      {children}
-    </DatabaseContext.Provider>
+    <WsdProvider db={db}>
+      <BootErrorContext.Provider value={error}>{children}</BootErrorContext.Provider>
+    </WsdProvider>
   );
 }
 
 export function useDatabase() {
-  return useContext(DatabaseContext);
+  const db = useWsdDatabase<typeof schema>();
+  const syncStatus = useSyncStatus();
+  const error = useContext(BootErrorContext);
+  return { db, error, syncStatus };
 }

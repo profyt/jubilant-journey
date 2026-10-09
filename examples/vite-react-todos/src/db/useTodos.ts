@@ -1,44 +1,30 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useMemo } from 'react';
+import { useQuery } from 'worker-sync-db/react';
 import type { Todo, TodoDoc, TodoStatus } from './schema.js';
 import { useDatabase } from './DatabaseProvider.js';
 
 function toTodo(doc: TodoDoc): Todo {
   return {
     id: doc.id,
-    title: doc.title,
+    title: String(doc.title ?? ''),
     status: doc.status as TodoStatus,
   };
 }
 
 export function useTodos(filter: TodoStatus | 'all') {
   const { db } = useDatabase();
-  const [todos, setTodos] = useState<Todo[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, loading, refetch } = useQuery(db, 'todos');
 
-  const reload = useCallback(async () => {
-    if (!db) return;
-    const docs = await db.query('todos');
-    let items = docs
+  const todos = useMemo(() => {
+    let items = data
       .filter((d) => !d._deleted)
       .map((d) => toTodo(d as TodoDoc));
     if (filter !== 'all') {
       items = items.filter((t) => t.status === filter);
     }
     items.sort((a, b) => a.title.localeCompare(b.title));
-    setTodos(items);
-  }, [db, filter]);
-
-  useEffect(() => {
-    if (!db) return;
-    setLoading(true);
-    void reload().finally(() => setLoading(false));
-
-    const unsub = db.subscribe('todos', () => {
-      void reload();
-    });
-
-    return unsub;
-  }, [db, reload]);
+    return items;
+  }, [data, filter]);
 
   const addTodo = useCallback(
     async (title: string) => {
@@ -83,5 +69,6 @@ export function useTodos(filter: TodoStatus | 'all') {
     toggleTodo,
     removeTodo,
     syncNow,
+    refetch,
   };
 }
