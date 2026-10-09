@@ -98,7 +98,7 @@ unsub();
 Each tab must call `subscribe` locally. The SharedWorker broadcasts change events only to ports with an active subscription on that collection.
 
 ::: tip Try it
-Open the [live demo](/demo/) in two tabs — adds and toggles mirror instantly. Details: [Multi-tab](/guide/multi-tab).
+Open the [live demo](https://profyt.github.io/jubilant-journey/) in two tabs — adds and toggles mirror instantly. Details: [Multi-tab](/guide/multi-tab).
 :::
 
 ## Remote sync (optional)
@@ -148,4 +148,4 @@ Call when unmounting a SPA root or logging out. Other tabs keep their connection
 - [API overview](/guide/api)
 - [React hooks](/guide/react)
 - [TypeScript examples](/examples/typescript)
-- [Live demo](/demo/)
+- [Live demo](https://profyt.github.io/jubilant-journey/)

@@ -11,7 +11,7 @@ hero:
       link: /guide/getting-started
     - theme: alt
       text: Live demo
-      link: /demo/
+      link: https://profyt.github.io/jubilant-journey/
     - theme: alt
       text: Examples
       link: /examples/typescript
@@ -33,7 +33,7 @@ features:
   <a href="./guide/api">API overview</a>
   <a href="./guide/react">React hooks</a>
   <a href="./guide/sync">Remote sync</a>
-  <a href="./demo/">Open live demo</a>
+  <a href="https://profyt.github.io/jubilant-journey/">Open live demo</a>
   <a href="https://www.npmjs.com/package/worker-sync-db">npm · worker-sync-db</a>
 </div>
 
@@ -65,4 +65,4 @@ const db = await createDatabase({
 await db.put('todos', { id: '1', title: 'Buy milk', status: 'open' });
 ```
 
-Continue in [Getting started](/guide/getting-started) or try the [live demo](/demo/) in two browser tabs.
+Continue in [Getting started](/guide/getting-started) or try the [live demo](https://profyt.github.io/jubilant-journey/) in two browser tabs.

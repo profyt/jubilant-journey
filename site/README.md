@@ -10,15 +10,15 @@ npm run site:install
 npm run docs:dev
 ```
 
-Open the printed localhost URL. Demo links (`/demo/`) resolve after a Pages-style assemble (see workflow); during `docs:dev` they 404 unless you copy the demo build into `.vitepress/dist/demo` after `docs:build`.
+Open the printed localhost URL (base path `/jubilant-journey/docs/` by default).
 
 ## Pages layout
 
 | URL | Content |
 |-----|---------|
-| `/jubilant-journey/` | This VitePress site |
-| `/jubilant-journey/demo/` | `examples/vite-react-todos` |
+| `/jubilant-journey/` | Live demo (`examples/vite-react-todos`) |
+| `/jubilant-journey/docs/` | This VitePress site |
 
-`DOCS_BASE` (default `/jubilant-journey/`) must match the GitHub Pages project path.
+`DOCS_BASE` (default `/jubilant-journey/docs/`) and `DEMO_URL` (default `/jubilant-journey/`) must match the GitHub Pages project path.
 
 Content is adapted from repo `docs/*.md` — keep API wording aligned when either side changes.

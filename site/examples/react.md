@@ -173,7 +173,7 @@ export function TodoToaster() {
 
 The published Pages demo is a complete todos UI with mock remote sync:
 
-- [Open live demo](/demo/)
+- [Open live demo](https://profyt.github.io/jubilant-journey/)
 - Source: [`examples/vite-react-todos`](https://github.com/profyt/jubilant-journey/tree/main/examples/vite-react-todos)
 
 Run locally from the repo root:

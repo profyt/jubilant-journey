@@ -131,4 +131,4 @@ await db.syncNow();
 
 ## Mock adapter
 
-The React example uses an in-memory adapter with artificial delay — see [`examples/vite-react-todos/src/sync/mockAdapter.ts`](https://github.com/profyt/jubilant-journey/blob/main/examples/vite-react-todos/src/sync/mockAdapter.ts) and try it in the [live demo](/demo/).
+The React example uses an in-memory adapter with artificial delay — see [`examples/vite-react-todos/src/sync/mockAdapter.ts`](https://github.com/profyt/jubilant-journey/blob/main/examples/vite-react-todos/src/sync/mockAdapter.ts) and try it in the [live demo](https://profyt.github.io/jubilant-journey/).

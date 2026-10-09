@@ -2,8 +2,8 @@
 
 Interactive demo for [worker-sync-db](../../README.md).
 
-- **Online demo:** https://profyt.github.io/jubilant-journey/demo/
-- **Docs:** https://profyt.github.io/jubilant-journey/
+- **Online demo:** https://profyt.github.io/jubilant-journey/
+- **Docs:** https://profyt.github.io/jubilant-journey/docs/
 - **Local:** from repo root — `npm install`, `npm run build`, `npm run example:dev`, then open two tabs on http://localhost:5173
 
 Uses package React hooks (`useQuery`, `useSyncStatus`) and a mock sync adapter (no real server).

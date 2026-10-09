@@ -37,10 +37,11 @@ export function App() {
   }
 
   const base = import.meta.env.BASE_URL;
-  // On Pages the demo lives under /demo/; locally base is `/` so link to published docs.
-  const docsRoot = /\/demo\/?$/.test(base)
-    ? base.replace(/demo\/?$/, '')
-    : 'https://profyt.github.io/jubilant-journey/';
+  // On Pages, docs live under /docs/ next to this demo; locally base is `/`.
+  const docsRoot =
+    base === '/' || base === './'
+      ? 'https://profyt.github.io/jubilant-journey/docs/'
+      : `${base}docs/`;
 
   return (
     <div className="shell">

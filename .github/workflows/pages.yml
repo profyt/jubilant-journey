@@ -32,7 +32,8 @@ jobs:
       - name: Install and build docs site
         working-directory: site
         env:
-          DOCS_BASE: /jubilant-journey/
+          DOCS_BASE: /jubilant-journey/docs/
+          DEMO_URL: https://profyt.github.io/jubilant-journey/
         run: |
           npm ci
           npm run build
@@ -40,7 +41,7 @@ jobs:
       - name: Install and build demo
         working-directory: examples/vite-react-todos
         env:
-          VITE_BASE: /jubilant-journey/demo/
+          VITE_BASE: /jubilant-journey/
         run: |
           npm ci
           npm run build
@@ -63,20 +64,23 @@ jobs:
             echo "OK: $f"
           done
 
-      - name: Assemble Pages artifact (docs + demo)
+      - name: Assemble Pages artifact (demo at / + docs at /docs/)
         run: |
           set -euo pipefail
-          mkdir -p site/.vitepress/dist/demo
-          cp -a examples/vite-react-todos/dist/. site/.vitepress/dist/demo/
-          # Helpful landing note for /demo without trailing slash is handled by Pages + cleanUrls on docs.
-          test -f site/.vitepress/dist/index.html
-          test -f site/.vitepress/dist/demo/index.html
+          rm -rf _pages
+          mkdir -p _pages/docs
+          # Demo owns the site root (keeps existing live demo URL stable).
+          cp -a examples/vite-react-todos/dist/. _pages/
+          # Docs under /docs/ (VitePress outDir contents).
+          cp -a site/.vitepress/dist/. _pages/docs/
+          test -f _pages/index.html
+          test -f _pages/docs/index.html
           echo "Assembled:"
-          find site/.vitepress/dist -maxdepth 2 -type f -name 'index.html' -o -name '*.html' | head -40
+          find _pages -maxdepth 2 -type f \( -name 'index.html' -o -name '*.html' \) | sort | head -40
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: site/.vitepress/dist
+          path: _pages
 
   deploy:
     needs: build

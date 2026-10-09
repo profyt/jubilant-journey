@@ -4,7 +4,7 @@
 
 **worker-sync-db** helps you build **offline-first SPAs** without a proprietary sync SaaS: data lives in the browser, updates instantly in the UI, stays consistent when the user opens several tabs, and syncs to **your backend** when you wire up push/pull.
 
-**[Documentation](https://profyt.github.io/jubilant-journey/)** · **[Live demo](https://profyt.github.io/jubilant-journey/demo/)** · [Repo guides](#documentation)
+**[Documentation](https://profyt.github.io/jubilant-journey/docs/)** · **[Live demo](https://profyt.github.io/jubilant-journey/)** · [Repo guides](#documentation)
 
 ## Who it's for
 
@@ -154,14 +154,14 @@ Details: [docs/testing.md](docs/testing.md).
 
 ## Documentation
 
-**Hosted site (GitHub Pages):** [profyt.github.io/jubilant-journey](https://profyt.github.io/jubilant-journey/) — guides, copy-paste examples, and nav to the live demo.
+**Hosted site (GitHub Pages):** [docs](https://profyt.github.io/jubilant-journey/docs/) · [demo](https://profyt.github.io/jubilant-journey/) — guides, copy-paste examples, and cross-nav.
 
 | Path on Pages | Content |
 |---------------|---------|
-| `/jubilant-journey/` | Docs home (VitePress) |
-| `/jubilant-journey/guide/getting-started` | Getting started |
-| `/jubilant-journey/examples/` | TypeScript + React examples |
-| `/jubilant-journey/demo/` | Live todos demo |
+| `/jubilant-journey/` | Live todos demo |
+| `/jubilant-journey/docs/` | Docs home (VitePress) |
+| `/jubilant-journey/docs/guide/getting-started` | Getting started |
+| `/jubilant-journey/docs/examples/` | TypeScript + React examples |
 
 Repo markdown (source of truth for API wording; the site adapts these):
 

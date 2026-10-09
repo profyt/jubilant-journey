@@ -1,6 +1,14 @@
 import { defineConfig } from 'vitepress';
 
-const base = process.env.DOCS_BASE || '/jubilant-journey/';
+/** Pages project path; docs are served under `${base}` (…/docs/). */
+const base = process.env.DOCS_BASE || '/jubilant-journey/docs/';
+/**
+ * Co-deployed demo at the Pages root (sibling of /docs/).
+ * Must be an absolute http(s) URL so VitePress treats it as external
+ * and does not prefix `base` (which would yield /docs/jubilant-journey/).
+ */
+const demoUrl =
+  process.env.DEMO_URL || 'https://profyt.github.io/jubilant-journey/';
 
 export default defineConfig({
   title: 'worker-sync-db',
@@ -10,16 +18,14 @@ export default defineConfig({
   cleanUrls: true,
   lastUpdated: true,
   ignoreDeadLinks: [
-    // Demo is co-deployed under /demo/ by the Pages workflow; not part of VitePress outDir.
-    /\/demo(?:\/|$)/,
-    /\/demo\/.*\.html$/,
+    // Demo lives at the Pages root, outside this VitePress tree.
+    /^https?:\/\/profyt\.github\.io\/jubilant-journey\/?/,
+    /^\.\.\/?$/,
+    /\/jubilant-journey\/?(?:$|\?|#)/,
   ],
 
   head: [
-    [
-      'link',
-      { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-    ],
+    ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
     [
       'link',
       { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
@@ -40,8 +46,8 @@ export default defineConfig({
     nav: [
       { text: 'Docs', link: '/guide/getting-started' },
       { text: 'Examples', link: '/examples/typescript' },
-      // Site-relative; VitePress prefixes `base` once → /jubilant-journey/demo/
-      { text: 'Demo', link: '/demo/' },
+      // Absolute URL → treated as external; full navigation to the demo app.
+      { text: 'Demo', link: demoUrl },
       {
         text: 'npm',
         link: 'https://www.npmjs.com/package/worker-sync-db',
@@ -85,7 +91,7 @@ export default defineConfig({
           items: [
             { text: 'TypeScript (vanilla)', link: '/examples/typescript' },
             { text: 'React hooks', link: '/examples/react' },
-            { text: 'Live demo app', link: '/demo/' },
+            { text: 'Live demo app', link: demoUrl },
           ],
         },
       ],

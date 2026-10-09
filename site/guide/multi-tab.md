@@ -46,7 +46,7 @@ const db = await createDatabase({
 
 ## Try it
 
-1. Open the [live demo](/demo/).
+1. Open the [live demo](https://profyt.github.io/jubilant-journey/).
 2. Duplicate the tab.
 3. Add or toggle a todo — the other tab updates immediately.
 

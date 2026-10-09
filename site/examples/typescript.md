@@ -127,5 +127,5 @@ More on adapters: [Remote / BYO sync](/guide/sync).
 ## See also
 
 - [React examples](/examples/react)
-- [Live demo](/demo/)
+- [Live demo](https://profyt.github.io/jubilant-journey/)
 - [API overview](/guide/api)

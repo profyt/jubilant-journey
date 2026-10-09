@@ -85,4 +85,4 @@ Returns the client from context (`null` while opening).
 
 ## Full example
 
-See [React examples](/examples/react) and the [live demo](/demo/) source under `examples/vite-react-todos`.
+See [React examples](/examples/react) and the [live demo](https://profyt.github.io/jubilant-journey/) source under `examples/vite-react-todos`.

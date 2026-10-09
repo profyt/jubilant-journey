@@ -30,7 +30,7 @@ _Last run: 2026-10-09 · Chromium (Playwright Desktop Chrome)_
 
 The demo build also ships optional bench pages (same Pages deploy):
 
-- [Throughput bench](/demo/bench.html)
-- [Marketing bench](/demo/marketing-bench.html)
+- [Throughput bench](https://profyt.github.io/jubilant-journey/bench.html)
+- [Marketing bench](https://profyt.github.io/jubilant-journey/marketing-bench.html)
 
 Regenerate committed snippets after meaningful client/worker changes — see [`docs/benchmarks/README.md`](https://github.com/profyt/jubilant-journey/blob/main/docs/benchmarks/README.md).
