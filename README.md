@@ -107,12 +107,38 @@ Open http://localhost:5173 in two tabs to see cross-tab updates. Source: [exampl
 - **SharedWorker** — required for multi-tab sync; supported in Chromium and Firefox (not Safari). Use `mode: 'auto'` (default) for fallback
 - **Same schema** — all tabs must use the same `schema` and `dbName` for one app
 
+## Performance
+
+Comparable Chromium numbers for README / docs — **not** the soft-ceiling regression suites (`test:perf` / `bench:e2e`).
+
+**What we measure:** sequential put/get + index query through `createDatabase` (`mode: 'shared'`) vs the same shapes on **Dexie** (main-thread IndexedDB). Plus a **cross-tab subscribe fan-out** number for the SharedWorker product story (Dexie has no equivalent path in this bench).
+
+**Caveats (read these):**
+
+- Same machine / same run only — absolute ops/s move with CPU load; prefer ratios from one run.
+- Dexie is a fair IndexedDB baseline for **single-tab CRUD**. It does **not** include SharedWorker multi-tab live sync; we do not pretend it loses a race it was never in.
+- worker-sync-db pays **RPC + SharedWorker** overhead on every op; that is intentional and what you buy multi-tab consistency with.
+- Numbers below are from the last maintainer regenerate, not from every CI job (CI runs the suite **report-only** and does not rewrite this table).
+
+<!-- marketing-bench:start -->
+_Run `npm run bench:marketing` to generate this table._
+<!-- marketing-bench:end -->
+
+```bash
+npm run example:install
+npx playwright install chromium   # once
+npm run bench:marketing           # writes docs/benchmarks/* and updates this table
+```
+
+JSON + markdown snippet: [docs/benchmarks/](docs/benchmarks/). Methodology notes: [docs/testing.md](docs/testing.md#marketing-benchmark).
+
 ## Development
 
 ```bash
-npm test            # unit tests
-npm run test:perf   # in-process core throughput / latency (fake-indexeddb)
-npm run bench:e2e   # real Chromium SharedWorker + IndexedDB benches (Playwright)
+npm test              # unit tests
+npm run test:perf     # in-process core throughput / latency (fake-indexeddb)
+npm run bench:e2e     # regression Chromium benches (soft ceilings)
+npm run bench:marketing  # publishable vs-Dexie numbers (updates README table)
 ```
 
 Details: [docs/testing.md](docs/testing.md).
