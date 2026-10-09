@@ -40,6 +40,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:perf": "vitest run --config vitest.perf.config.ts",
     "prepublishOnly": "npm run typecheck && npm test && npm run build",
     "pack:dry": "npm run build && npm pack --dry-run",
     "example:dev": "npm run dev --prefix examples/vite-react-todos",
