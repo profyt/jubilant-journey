@@ -85,18 +85,19 @@ query<C extends keyof S & string>(
 | `QueryOptions` | Description |
 |----------------|-------------|
 | `index` | Index name from schema |
-| `range` | `IDBKeyRangeInit` (`lower`, `upper`, `lowerOpen`, `upperOpen`) |
+| `range` | `IDBKeyRangeInit`: both bounds → `only`/`bound`; only `lower` → `lowerBound`; only `upper` → `upperBound` |
 | `limit` | Maximum number of results |
 | `includeDeleted` | Include soft-deleted documents |
 
 ---
 
-### `subscribe(collection, listener)`
+### `subscribe(collection, listener, filter?)`
 
 ```typescript
 subscribe<C extends keyof S & string>(
   collection: C,
   listener: (event: ChangeEvent<InferDoc<S, C>>) => void,
+  filter?: { field: string; value: unknown },
 ): () => void;
 ```
 
@@ -112,6 +113,10 @@ subscribe<C extends keyof S & string>(
 ```
 
 Returns an unsubscribe function. Register in every tab that should receive live updates.
+
+Optional `filter` limits worker fan-out to puts where `doc[field] === value` (deletes are not delivered when a filter is set). The filter is taken from the **first** subscriber for that collection in the tab.
+
+Also receives changes applied from remote `pull` (not only local multi-tab writes).
 
 ---
 
@@ -218,6 +223,7 @@ interface FetchSyncConfig {
 | Code | Meaning |
 |------|---------|
 | `NotFound` | Document missing on delete |
+| `WorkerDead` | SharedWorker / Worker failed to load |
 | `SchemaMismatch` | Different schema for same `dbName` |
 | `NotConnected` | Port closed |
 | `Timeout` | RPC exceeded timeout (default 30s) |

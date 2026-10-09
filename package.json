@@ -42,5 +42,18 @@
   "peerDependencies": {
     "typescript": ">=5"
   },
+  "keywords": [
+    "indexeddb",
+    "sharedworker",
+    "offline-first",
+    "sync",
+    "multi-tab",
+    "typescript",
+    "local-first"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/profyt/jubilant-journey.git"
+  },
   "license": "MIT"
 }

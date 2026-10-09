@@ -5,9 +5,9 @@
 worker-sync-db uses an **offline-first** model:
 
 1. `put` / `delete` write to IndexedDB immediately.
-2. Each mutation is appended to `_meta/sync_queue` as a `PendingOp`.
+2. When `remote` is configured, each mutation is appended to `sync_queue` as a `PendingOp` (local-only DBs do not enqueue).
 3. `syncNow()` (also scheduled after writes) pushes pending ops, then pulls remote changes.
-4. Remote changes merge with **LWW** (last write wins) using `_updatedAt` and `_version`.
+4. Remote changes merge with **LWW** (last write wins) using `_updatedAt` and `_version`, then **broadcast** to subscribed tabs as `change` events.
 
 ## Delegate vs fetch
 

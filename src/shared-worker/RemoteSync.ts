@@ -56,6 +56,10 @@ export class RemoteSync {
     this.syncConfig = config;
   }
 
+  hasConfig(): boolean {
+    return this.syncConfig !== null;
+  }
+
   setOnConflict(
     handler: ((conflict: { opId: string; reason: string }) => void) | undefined,
   ): void {
@@ -146,9 +150,7 @@ export class RemoteSync {
       throw new Error(`Pull failed: ${pullRes.status}`);
     }
     const pullBody = (await pullRes.json()) as PullResult;
-    for (const change of pullBody.changes) {
-      await this.db.applyRemoteChange(change);
-    }
+    await this.applyAndBroadcast(pullBody.changes);
     await this.db.setCursor(pullBody.nextCursor);
   }
 
@@ -169,10 +171,22 @@ export class RemoteSync {
 
     const cursor = await this.db.getCursor();
     const pullResult = await this.delegatePull(leader.clientId, cursor);
-    for (const change of pullResult.changes) {
-      await this.db.applyRemoteChange(change);
-    }
+    await this.applyAndBroadcast(pullResult.changes);
     await this.db.setCursor(pullResult.nextCursor);
+  }
+
+  private async applyAndBroadcast(changes: RemoteChange[]): Promise<void> {
+    for (const change of changes) {
+      const { doc, applied } = await this.db.applyRemoteChange(change);
+      if (!applied) continue;
+      const isDelete = change.kind === 'delete' || Boolean(doc._deleted);
+      this.registry.broadcastChange({
+        collection: change.collection,
+        type: isDelete ? 'delete' : 'put',
+        doc: isDelete ? null : doc,
+        id: doc.id,
+      });
+    }
   }
 
   private delegatePull(

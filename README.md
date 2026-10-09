@@ -129,7 +129,7 @@ Details: [docs/getting-started.md](docs/getting-started.md)
 | `put(collection, doc)` | Upsert; returns doc with meta fields |
 | `delete(collection, id)` | Soft-delete |
 | `query(collection, opts?)` | List by store or index + optional `IDBKeyRange` |
-| `subscribe(collection, listener)` | Live updates from this tab and others; returns unsubscribe |
+| `subscribe(collection, listener, filter?)` | Live updates (local + remote pull + other tabs); optional field filter |
 | `syncNow()` | Push pending ops, pull remote changes |
 | `getSyncStatus()` | `{ pending, lastSyncAt, lastError, online }` |
 | `onSyncStatusChange(listener)` | Fired when sync status changes |

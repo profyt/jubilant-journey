@@ -101,6 +101,11 @@ export class PortBridge {
     }
     this.pending.clear();
     this.eventListeners.clear();
+    try {
+      this.port.close();
+    } catch {
+      // port may already be closed
+    }
   }
 
   private async handleMessage(data: PortMessage): Promise<void> {

@@ -1,5 +1,9 @@
-import type { ChangeEventPayload, WorkerEvent } from '../shared/protocol.js';
-import type { SyncConfig } from '../shared/protocol.js';
+import type {
+  ChangeEventPayload,
+  QueryFilter,
+  SyncConfig,
+  WorkerEvent,
+} from '../shared/protocol.js';
 import type {
   CollectionSchema,
   InferDoc,
@@ -56,6 +60,7 @@ export interface DatabaseClient<S extends CollectionSchema> {
   subscribe<C extends keyof S & string>(
     collection: C,
     listener: (event: ChangeEvent<InferDoc<S, C>>) => void,
+    filter?: QueryFilter,
   ): () => void;
   syncNow(): Promise<SyncStatus>;
   getSyncStatus(): Promise<SyncStatus>;
@@ -191,12 +196,12 @@ function createClientFromBridge<S extends CollectionSchema>(
       }) as Promise<InferDoc<S, typeof collection>[]>;
     },
 
-    subscribe(collection, listener) {
+    subscribe(collection, listener, filter) {
       let listeners = localSubscriptions.get(collection);
       if (!listeners) {
         listeners = new Set();
         localSubscriptions.set(collection, listeners);
-        void bridge.call({ type: 'subscribe', collection });
+        void bridge.call({ type: 'subscribe', collection, filter });
       }
       listeners.add(listener as (event: ChangeEvent<InferDoc<S, string>>) => void);
 

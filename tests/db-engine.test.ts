@@ -61,10 +61,32 @@ describe('DbEngine', () => {
     const open = await engine.query({
       collection: 'todos',
       index: 'byStatus',
-      range: IDBKeyRange.only('open'),
+      range: { lower: 'open', upper: 'open' },
     });
     expect(open).toHaveLength(1);
     expect(open[0]?.id).toBe('1');
+  });
+
+  it('queries with lowerBound range', async () => {
+    await engine.put('todos', { id: '1', title: 'A', status: 'open' });
+    await engine.put('todos', { id: '2', title: 'B', status: 'done' });
+    await engine.put('todos', { id: '3', title: 'C', status: 'pending' });
+    const fromDone = await engine.query({
+      collection: 'todos',
+      index: 'byStatus',
+      range: { lower: 'done' },
+    });
+    expect(fromDone.map((d) => d.status).sort()).toEqual(['done', 'open', 'pending']);
+  });
+
+  it('skips sync queue when enqueueSync is false', async () => {
+    await engine.put(
+      'todos',
+      { id: '1', title: 'Local only', status: 'open' },
+      { enqueueSync: false },
+    );
+    expect(await engine.getPendingOps()).toHaveLength(0);
+    expect((await engine.get('todos', '1'))?.title).toBe('Local only');
   });
 
   it('applies remote change with LWW', async () => {
@@ -76,11 +98,33 @@ describe('DbEngine', () => {
       _version: 5,
       _updatedAt: Date.now() + 1000,
     };
-    const merged = await engine.applyRemoteChange({
+    const { doc: merged, applied } = await engine.applyRemoteChange({
       collection: 'todos',
       doc: remote,
       kind: 'put',
     });
+    expect(applied).toBe(true);
     expect(merged.title).toBe('Remote');
+  });
+
+  it('rejects stale remote change', async () => {
+    const { doc: local } = await engine.put('todos', {
+      id: '1',
+      title: 'Local',
+      status: 'open',
+    });
+    const { applied, doc } = await engine.applyRemoteChange({
+      collection: 'todos',
+      doc: {
+        id: '1',
+        title: 'Stale',
+        status: 'open',
+        _version: 1,
+        _updatedAt: local._updatedAt - 1000,
+      },
+      kind: 'put',
+    });
+    expect(applied).toBe(false);
+    expect(doc.title).toBe('Local');
   });
 });
