@@ -1,5 +1,8 @@
 node_modules/
 dist/
+site/.vitepress/dist/
+site/.vitepress/cache/
+_pages/
 *.tsbuildinfo
 .DS_Store
 /test-results/

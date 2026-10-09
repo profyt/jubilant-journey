@@ -49,7 +49,11 @@
     "example:install": "npm ci --prefix examples/vite-react-todos",
     "example:dev": "npm run dev --prefix examples/vite-react-todos",
     "example:build": "npm run build --prefix examples/vite-react-todos",
-    "example:preview": "npm run preview --prefix examples/vite-react-todos"
+    "example:preview": "npm run preview --prefix examples/vite-react-todos",
+    "docs:dev": "npm run dev --prefix site",
+    "docs:build": "npm run build --prefix site",
+    "docs:preview": "npm run preview --prefix site",
+    "site:install": "npm ci --prefix site"
   },
   "dependencies": {
     "idb": "^8.0.3"
@@ -99,7 +103,7 @@
   "bugs": {
     "url": "https://github.com/profyt/jubilant-journey/issues"
   },
-  "homepage": "https://github.com/profyt/jubilant-journey#readme",
+  "homepage": "https://profyt.github.io/jubilant-journey/docs/",
   "author": "Dmitrii Novoselov",
   "license": "MIT"
 }

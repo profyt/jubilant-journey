@@ -4,7 +4,7 @@
 
 **worker-sync-db** helps you build **offline-first SPAs** without a proprietary sync SaaS: data lives in the browser, updates instantly in the UI, stays consistent when the user opens several tabs, and syncs to **your backend** when you wire up push/pull.
 
-**[Live demo](https://profyt.github.io/jubilant-journey/)** · [Documentation](#documentation)
+**[Documentation](https://profyt.github.io/jubilant-journey/docs/)** · **[Live demo](https://profyt.github.io/jubilant-journey/)** · [Repo guides](#documentation)
 
 ## Who it's for
 
@@ -154,6 +154,17 @@ Details: [docs/testing.md](docs/testing.md).
 
 ## Documentation
 
+**Hosted site (GitHub Pages):** [docs](https://profyt.github.io/jubilant-journey/docs/) · [demo](https://profyt.github.io/jubilant-journey/) — guides, copy-paste examples, and cross-nav.
+
+| Path on Pages | Content |
+|---------------|---------|
+| `/jubilant-journey/` | Live todos demo |
+| `/jubilant-journey/docs/` | Docs home (VitePress) |
+| `/jubilant-journey/docs/guide/getting-started` | Getting started |
+| `/jubilant-journey/docs/examples/` | TypeScript + React examples |
+
+Repo markdown (source of truth for API wording; the site adapts these):
+
 | Guide | Topics |
 |-------|--------|
 | [getting-started.md](docs/getting-started.md) | Schema, first app |
@@ -166,6 +177,8 @@ Details: [docs/testing.md](docs/testing.md).
 | [testing.md](docs/testing.md) | Unit + performance + marketing benches |
 | [benchmarks/](docs/benchmarks/) | Last marketing numbers (JSON + snippet) |
 | [publishing.md](docs/publishing.md) | npm publish (maintainers) |
+
+Local docs preview: `npm run site:install && npm run docs:dev`.
 
 ## License
 

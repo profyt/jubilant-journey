@@ -36,6 +36,13 @@ export function App() {
     );
   }
 
+  const base = import.meta.env.BASE_URL;
+  // On Pages, docs live under /docs/ next to this demo; locally base is `/`.
+  const docsRoot =
+    base === '/' || base === './'
+      ? 'https://profyt.github.io/jubilant-journey/docs/'
+      : `${base}docs/`;
+
   return (
     <div className="shell">
       <div className="atmosphere" aria-hidden="true">
@@ -53,6 +60,26 @@ export function App() {
         </svg>
       </div>
 
+      <nav className="site-nav" aria-label="Site">
+        <a className="site-nav__brand" href={docsRoot}>
+          worker-sync-db
+        </a>
+        <div className="site-nav__links">
+          <a href={docsRoot}>Docs</a>
+          <a href={`${docsRoot}examples/typescript`}>Examples</a>
+          <a href={import.meta.env.BASE_URL} aria-current="page">
+            Demo
+          </a>
+          <a
+            href="https://github.com/profyt/jubilant-journey"
+            target="_blank"
+            rel="noreferrer"
+          >
+            GitHub
+          </a>
+        </div>
+      </nav>
+
       <header className="hero">
         <p className="hero__brand">worker-sync-db</p>
         <h1 className="hero__headline">One database. Every tab. Offline-first.</h1>
@@ -63,6 +90,9 @@ export function App() {
         <div className="hero__cta">
           <a className="btn btn--primary" href="#playground">
             Try the playground
+          </a>
+          <a className="btn btn--ghost" href={docsRoot}>
+            Documentation
           </a>
           <a
             className="btn btn--ghost"
