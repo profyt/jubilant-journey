@@ -46,3 +46,30 @@ jobs:
             e2e-bench-results.json
             e2e-bench-report.json
           if-no-files-found: ignore
+
+  # Report-only: never fail the PR on marketing ops/s variance.
+  # Does not rewrite committed docs/benchmarks or README (MARKETING_BENCH_COMMIT=0).
+  bench-marketing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm ci --prefix examples/vite-react-todos
+      - run: npx playwright install --with-deps chromium
+      - run: npm run bench:marketing:ci
+        env:
+          CI: true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: marketing-bench-results
+          path: |
+            marketing-bench-results.json
+            marketing-bench-report.json
+          if-no-files-found: ignore
