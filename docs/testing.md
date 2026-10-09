@@ -55,3 +55,40 @@ PERF_MULTIPLIER=2 npm run bench:e2e
 ```
 
 CI installs Chromium and runs `bench:e2e` after the unit/perf jobs.
+
+## Marketing benchmark
+
+```bash
+npm run example:install
+npx playwright install chromium   # once
+npm run bench:marketing
+```
+
+Publishable Chromium comparison for README / docs (ops/s, latency, cross-tab fan-out).
+
+| Side | Path | Role |
+|------|------|------|
+| worker-sync-db | `createDatabase` + SharedWorker → IndexedDB | Product under test |
+| Dexie | Main-thread IndexedDB | Honest single-tab baseline on the same storage layer |
+
+### What is comparable
+
+- Same Chromium, same document shape `{ id, title, kind }`, same sequential awaited put/get counts, one equality index query.
+- Latency: single-op put/get p50 / p95.
+
+### What is not comparable
+
+- **Multi-tab live subscribe** — measured only for worker-sync-db (Dexie column is “—”). Do not claim “faster than Dexie at multi-tab.”
+- Remote sync / queue (covered by regression benches, not marketing copy).
+- CI absolute numbers vs a laptop run — regenerate both sides together before publishing.
+
+### Artifacts & CI
+
+| Output | Purpose |
+|--------|---------|
+| `docs/benchmarks/marketing-latest.json` | Machine-readable last committed run |
+| `docs/benchmarks/marketing-snippet.md` | Markdown table fragment |
+| README Performance markers | Updated in place by `bench:marketing` |
+| `marketing-bench-results.json` | Local/CI run copy (gitignored) |
+
+Local `npm run bench:marketing` rewrites committed docs + README. CI uses `npm run bench:marketing:ci` (`MARKETING_BENCH_COMMIT=0`) with **`continue-on-error: true`** — smoke/report only, uploads the JSON artifact, never fails the PR on ops/s variance and never commits README numbers from the runner.

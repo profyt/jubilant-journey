@@ -42,6 +42,8 @@
     "test:watch": "vitest",
     "test:perf": "vitest run --config vitest.perf.config.ts",
     "bench:e2e": "playwright test --config e2e/bench/playwright.config.ts",
+    "bench:marketing": "playwright test --config e2e/marketing/playwright.config.ts",
+    "bench:marketing:ci": "MARKETING_BENCH_COMMIT=0 playwright test --config e2e/marketing/playwright.config.ts",
     "prepublishOnly": "npm run typecheck && npm test && npm run build",
     "pack:dry": "npm run build && npm pack --dry-run",
     "example:install": "npm ci --prefix examples/vite-react-todos",

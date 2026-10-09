@@ -10,3 +10,6 @@ dist/
 /e2e/bench/test-results/
 /e2e/bench/playwright-report/
 /e2e/bench/e2e-bench-report.json
+/marketing-bench-results.json
+/marketing-bench-report.json
+/test-results-marketing/
