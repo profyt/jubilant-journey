@@ -74,14 +74,25 @@ describe('perf: sync queue under load (mock remote)', () => {
 
     expect(await engine.getPendingOps()).toHaveLength(0);
     expect(await engine.getCursor()).toBe('cursor-load');
-    expect(port.postMessage).toHaveBeenCalledTimes(20);
+
+    const postMessage = vi.mocked(port.postMessage);
+    const changeDeliveries = postMessage.mock.calls.filter(
+      ([msg]) =>
+        msg &&
+        typeof msg === 'object' &&
+        (msg as { kind?: string }).kind === 'change',
+    ).length;
+    // syncNow also broadcasts syncStatus to all clients — count changes only.
+    expect(changeDeliveries).toBe(20);
+    expect(postMessage).toHaveBeenCalled();
 
     reportMetric('sync_queue_load', {
       enqueued: LOAD_N,
       enqueueMs: Math.round(enqueueMs),
       syncMs: Math.round(syncMs),
       remotePullApplied: 20,
-      fanoutDeliveries: 20,
+      changeFanoutDeliveries: changeDeliveries,
+      totalPortMessages: postMessage.mock.calls.length,
     });
 
     expect(enqueueMs).toBeLessThan(softCeilingMs(15_000));
