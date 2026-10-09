@@ -17,6 +17,7 @@ export default defineConfig({
   base,
   cleanUrls: true,
   lastUpdated: true,
+  srcExclude: ['README.md'],
   ignoreDeadLinks: [
     // Demo lives at the Pages root, outside this VitePress tree.
     /^https?:\/\/profyt\.github\.io\/jubilant-journey\/?/,
