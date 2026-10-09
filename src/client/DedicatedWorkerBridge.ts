@@ -2,6 +2,7 @@ import type { SyncConfig } from '../shared/protocol.js';
 import type { CollectionSchema } from '../shared/schema.js';
 import type { RemoteSyncAdapter } from '../sync/RemoteSyncAdapter.js';
 import { PortBridge, type OnConflictHandler } from './PortBridge.js';
+import { resolveWorkerScriptUrl } from './resolveWorkerScriptUrl.js';
 
 export interface DedicatedWorkerBridgeOptions {
   dbName: string;
@@ -15,10 +16,7 @@ export interface DedicatedWorkerBridgeOptions {
 export async function connectDedicatedWorker(
   options: DedicatedWorkerBridgeOptions,
 ): Promise<PortBridge> {
-  const url =
-    options.dedicatedWorkerUrl instanceof URL
-      ? options.dedicatedWorkerUrl.href
-      : options.dedicatedWorkerUrl;
+  const url = resolveWorkerScriptUrl(options.dedicatedWorkerUrl);
 
   const worker = new Worker(url, { type: 'module' });
 

@@ -26,5 +26,7 @@ export default defineConfig({
   },
   build: {
     sourcemap: true,
+    // Ensure worker assets keep hashed names under assets/ with the site base.
+    assetsDir: 'assets',
   },
 });
