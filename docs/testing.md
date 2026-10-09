@@ -31,3 +31,26 @@ PERF_MULTIPLIER=2 npm run test:perf
 ```
 
 These tests exercise the same in-process worker core as unit tests — not Playwright / real SharedWorker e2e.
+
+## Browser e2e benches (Playwright)
+
+```bash
+npx playwright install chromium   # once per machine / CI image
+npm run bench:e2e
+```
+
+Runs Chromium against the example’s `/bench.html` page with a **real SharedWorker + IndexedDB** (complements `test:perf`).
+
+| Case | What |
+|------|------|
+| Throughput / latency | put/get/query through `createDatabase` in the browser |
+| Cross-tab fan-out | two tabs, same `dbName`, subscribe receives puts |
+| Sync round-trip | fast in-page mock remote (`?remote=1`), queue drains |
+
+Soft ceilings only (catastrophic regressions). Metrics: console `[bench:e2e] …` and `e2e-bench-results.json`. Slow runners:
+
+```bash
+PERF_MULTIPLIER=2 npm run bench:e2e
+```
+
+CI installs Chromium and runs `bench:e2e` after the unit/perf jobs.

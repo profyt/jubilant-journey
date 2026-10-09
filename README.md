@@ -110,8 +110,9 @@ Open http://localhost:5173 in two tabs to see cross-tab updates. Source: [exampl
 ## Development
 
 ```bash
-npm test          # unit tests
-npm run test:perf # throughput / latency / fan-out / sync-queue load (CI-safe soft ceilings)
+npm test            # unit tests
+npm run test:perf   # in-process core throughput / latency (fake-indexeddb)
+npm run bench:e2e   # real Chromium SharedWorker + IndexedDB benches (Playwright)
 ```
 
 Details: [docs/testing.md](docs/testing.md).

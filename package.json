@@ -41,10 +41,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:perf": "vitest run --config vitest.perf.config.ts",
+    "bench:e2e": "playwright test --config e2e/bench/playwright.config.ts",
     "prepublishOnly": "npm run typecheck && npm test && npm run build",
     "pack:dry": "npm run build && npm pack --dry-run",
     "example:dev": "npm run dev --prefix examples/vite-react-todos",
-    "example:build": "npm run build --prefix examples/vite-react-todos"
+    "example:build": "npm run build --prefix examples/vite-react-todos",
+    "example:preview": "npm run preview --prefix examples/vite-react-todos"
   },
   "dependencies": {
     "idb": "^8.0.3"
@@ -62,6 +64,7 @@
     }
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.0",
     "@testing-library/react": "^16.3.0",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
