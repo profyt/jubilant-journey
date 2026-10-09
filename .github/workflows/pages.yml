@@ -1,4 +1,4 @@
-name: Deploy demo to GitHub Pages
+name: Deploy docs and demo to GitHub Pages
 
 on:
   push:
@@ -23,22 +23,32 @@ jobs:
         with:
           node-version: '22'
           cache: npm
+
       - name: Install and build library
         run: |
           npm ci
           npm run build
-      - name: Install and build demo
-        working-directory: examples/vite-react-todos
+
+      - name: Install and build docs site
+        working-directory: site
         env:
-          VITE_BASE: /jubilant-journey/
+          DOCS_BASE: /jubilant-journey/
         run: |
           npm ci
           npm run build
+
+      - name: Install and build demo
+        working-directory: examples/vite-react-todos
+        env:
+          VITE_BASE: /jubilant-journey/demo/
+        run: |
+          npm ci
+          npm run build
+
       - name: Verify worker assets have no bare imports
         run: |
           set -euo pipefail
           shopt -s nullglob
-          files=(examples/vite-react-todos/dist/assets/*worker*.js examples/vite-react-todos/dist/assets/entry-*.js)
           # Vite may hash worker chunks without "worker" in the name; scan all JS under assets except the main app bundle.
           mapfile -t assets < <(find examples/vite-react-todos/dist/assets -name '*.js' ! -name 'index-*.js')
           if [ "${#assets[@]}" -eq 0 ]; then
@@ -52,9 +62,21 @@ jobs:
             fi
             echo "OK: $f"
           done
+
+      - name: Assemble Pages artifact (docs + demo)
+        run: |
+          set -euo pipefail
+          mkdir -p site/.vitepress/dist/demo
+          cp -a examples/vite-react-todos/dist/. site/.vitepress/dist/demo/
+          # Helpful landing note for /demo without trailing slash is handled by Pages + cleanUrls on docs.
+          test -f site/.vitepress/dist/index.html
+          test -f site/.vitepress/dist/demo/index.html
+          echo "Assembled:"
+          find site/.vitepress/dist -maxdepth 2 -type f -name 'index.html' -o -name '*.html' | head -40
+
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: examples/vite-react-todos/dist
+          path: site/.vitepress/dist
 
   deploy:
     needs: build
