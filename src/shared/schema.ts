@@ -24,6 +24,35 @@ export interface QueryOptions {
   includeDeleted?: boolean;
 }
 
+/** Build an IDBKeyRange from a serializable init (supports only / bound / lower / upper). */
+export function toIDBKeyRange(range?: IDBKeyRangeInit): IDBKeyRange | undefined {
+  if (!range) return undefined;
+  const hasLower = range.lower !== undefined;
+  const hasUpper = range.upper !== undefined;
+  if (hasLower && hasUpper) {
+    if (
+      Object.is(range.lower, range.upper) &&
+      !range.lowerOpen &&
+      !range.upperOpen
+    ) {
+      return IDBKeyRange.only(range.lower as IDBValidKey);
+    }
+    return IDBKeyRange.bound(
+      range.lower as IDBValidKey,
+      range.upper as IDBValidKey,
+      range.lowerOpen,
+      range.upperOpen,
+    );
+  }
+  if (hasLower) {
+    return IDBKeyRange.lowerBound(range.lower as IDBValidKey, range.lowerOpen);
+  }
+  if (hasUpper) {
+    return IDBKeyRange.upperBound(range.upper as IDBValidKey, range.upperOpen);
+  }
+  return undefined;
+}
+
 export function schemasEqual(
   a: CollectionSchema,
   b: CollectionSchema,

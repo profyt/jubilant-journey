@@ -159,31 +159,41 @@ export class MessageRouter {
       }
 
       case 'put': {
-        const { doc } = await this.db.put(request.collection, request.doc);
-        await this.remoteSync.refreshPendingCount();
+        const enqueueSync = this.remoteSync.hasConfig();
+        const { doc } = await this.db.put(request.collection, request.doc, {
+          enqueueSync,
+        });
         this.registry.broadcastChange({
           collection: request.collection,
           type: 'put',
           doc,
           id: doc.id,
         });
-        void this.remoteSync.syncNow();
+        if (enqueueSync) {
+          await this.remoteSync.refreshPendingCount();
+          void this.remoteSync.syncNow();
+        }
         return { kind: 'response', requestId, ok: true, data: doc };
       }
 
       case 'delete': {
-        const result = await this.db.delete(request.collection, request.id);
+        const enqueueSync = this.remoteSync.hasConfig();
+        const result = await this.db.delete(request.collection, request.id, {
+          enqueueSync,
+        });
         if (!result) {
           return this.fail(requestId, 'NotFound', 'Document not found');
         }
-        await this.remoteSync.refreshPendingCount();
         this.registry.broadcastChange({
           collection: request.collection,
           type: 'delete',
           doc: null,
           id: request.id,
         });
-        void this.remoteSync.syncNow();
+        if (enqueueSync) {
+          await this.remoteSync.refreshPendingCount();
+          void this.remoteSync.syncNow();
+        }
         return { kind: 'response', requestId, ok: true, data: result.doc };
       }
 

@@ -4,10 +4,16 @@ import type { DocumentMeta } from '../shared/meta.js';
 import { withMeta, withSoftDelete } from '../shared/meta.js';
 import {
   computeSchemaVersion,
+  toIDBKeyRange,
   type CollectionSchema,
   type IDBKeyRangeInit,
 } from '../shared/schema.js';
 import type { PendingOp } from '../sync/RemoteSyncAdapter.js';
+
+export interface WriteOptions {
+  /** When false, skip sync_queue (local-only DB). Default true. */
+  enqueueSync?: boolean;
+}
 
 const META_STORE = '_meta';
 const SYNC_QUEUE_STORE = 'sync_queue';
@@ -111,7 +117,7 @@ export class DbEngine {
     const { collection, index, range, limit, includeDeleted } = options;
     const store = db.transaction(collection).store;
     const source = index ? store.index(index) : store;
-    const keyRange = range ? IDBKeyRange.bound(range.lower, range.upper, range.lowerOpen, range.upperOpen) : undefined;
+    const keyRange = toIDBKeyRange(range);
     const results: (DocumentMeta & Record<string, unknown>)[] = [];
     let count = 0;
     for await (const cursor of source.iterate(keyRange)) {
@@ -132,23 +138,34 @@ export class DbEngine {
   async put(
     collection: string,
     payload: Record<string, unknown> & { id: string },
-  ): Promise<{ doc: DocumentMeta & Record<string, unknown>; op: PendingOp }> {
+    options: WriteOptions = {},
+  ): Promise<{
+    doc: DocumentMeta & Record<string, unknown>;
+    op: PendingOp | null;
+  }> {
+    const enqueueSync = options.enqueueSync !== false;
     const db = this.requireDb();
     const existing = (await db.get(collection, payload.id)) as
       | (DocumentMeta & Record<string, unknown>)
       | undefined;
     const doc = withMeta(payload.id, payload, existing ?? null);
-    const op: PendingOp = {
-      opId: crypto.randomUUID(),
-      collection,
-      doc,
-      kind: 'put',
-    };
+    const op: PendingOp | null = enqueueSync
+      ? {
+          opId: crypto.randomUUID(),
+          collection,
+          doc,
+          kind: 'put',
+        }
+      : null;
 
-    const tx = db.transaction([collection, SYNC_QUEUE_STORE], 'readwrite');
-    await tx.objectStore(collection).put(doc);
-    await tx.objectStore(SYNC_QUEUE_STORE).put(op);
-    await tx.done;
+    if (enqueueSync && op) {
+      const tx = db.transaction([collection, SYNC_QUEUE_STORE], 'readwrite');
+      await tx.objectStore(collection).put(doc);
+      await tx.objectStore(SYNC_QUEUE_STORE).put(op);
+      await tx.done;
+    } else {
+      await db.put(collection, doc);
+    }
 
     return { doc, op };
   }
@@ -156,7 +173,12 @@ export class DbEngine {
   async delete(
     collection: string,
     id: string,
-  ): Promise<{ doc: DocumentMeta & Record<string, unknown>; op: PendingOp } | null> {
+    options: WriteOptions = {},
+  ): Promise<{
+    doc: DocumentMeta & Record<string, unknown>;
+    op: PendingOp | null;
+  } | null> {
+    const enqueueSync = options.enqueueSync !== false;
     const db = this.requireDb();
     const existing = (await db.get(collection, id)) as
       | (DocumentMeta & Record<string, unknown>)
@@ -165,17 +187,23 @@ export class DbEngine {
       return null;
     }
     const doc = withSoftDelete(existing);
-    const op: PendingOp = {
-      opId: crypto.randomUUID(),
-      collection,
-      doc,
-      kind: 'delete',
-    };
+    const op: PendingOp | null = enqueueSync
+      ? {
+          opId: crypto.randomUUID(),
+          collection,
+          doc,
+          kind: 'delete',
+        }
+      : null;
 
-    const tx = db.transaction([collection, SYNC_QUEUE_STORE], 'readwrite');
-    await tx.objectStore(collection).put(doc);
-    await tx.objectStore(SYNC_QUEUE_STORE).put(op);
-    await tx.done;
+    if (enqueueSync && op) {
+      const tx = db.transaction([collection, SYNC_QUEUE_STORE], 'readwrite');
+      await tx.objectStore(collection).put(doc);
+      await tx.objectStore(SYNC_QUEUE_STORE).put(op);
+      await tx.done;
+    } else {
+      await db.put(collection, doc);
+    }
 
     return { doc, op };
   }
@@ -215,7 +243,10 @@ export class DbEngine {
     collection: string;
     doc: DocumentMeta & Record<string, unknown>;
     kind: 'put' | 'delete';
-  }): Promise<DocumentMeta & Record<string, unknown>> {
+  }): Promise<{
+    doc: DocumentMeta & Record<string, unknown>;
+    applied: boolean;
+  }> {
     const db = this.requireDb();
     const { collection, doc, kind } = change;
     const existing = (await db.get(collection, doc.id)) as
@@ -223,20 +254,20 @@ export class DbEngine {
       | undefined;
 
     if (existing && existing._updatedAt > doc._updatedAt) {
-      return existing;
+      return { doc: existing, applied: false };
     }
     if (
       existing &&
       existing._updatedAt === doc._updatedAt &&
       existing._version >= doc._version
     ) {
-      return existing;
+      return { doc: existing, applied: false };
     }
 
     const toStore =
       kind === 'delete' ? { ...doc, _deleted: true } : { ...doc, _deleted: false };
 
     await db.put(collection, toStore);
-    return toStore;
+    return { doc: toStore, applied: true };
   }
 }

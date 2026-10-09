@@ -44,6 +44,35 @@ describe('MessageRouter', () => {
     });
 
     expect(loaded.title).toBe('Hello');
+
+    const pending = await db.getPendingOps();
+    expect(pending).toHaveLength(0);
+  });
+
+  it('enqueues sync ops when remote config is set', async () => {
+    const channel = new MessageChannel();
+    const db = new DbEngine();
+    const registry = new ClientRegistry();
+    const remoteSync = new RemoteSync(db, registry);
+    const router = new MessageRouter(db, registry, remoteSync);
+
+    router.attach(channel.port1);
+
+    await sendRequest(channel.port2, {
+      type: 'connect',
+      dbName: `router-sync-${Math.random()}`,
+      schema,
+      syncCapable: true,
+      sync: { kind: 'delegate' },
+    });
+
+    await sendRequest(channel.port2, {
+      type: 'put',
+      collection: 'todos',
+      doc: { id: '1', title: 'Synced' },
+    });
+
+    expect(await db.getPendingOps()).toHaveLength(1);
   });
 });
 

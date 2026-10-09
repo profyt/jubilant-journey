@@ -17,7 +17,13 @@ export type {
 export { connectSharedWorker } from './client/SharedWorkerBridge.js';
 export { connectDedicatedWorker } from './client/DedicatedWorkerBridge.js';
 
-export type { CollectionSchema, InferDoc, QueryOptions } from './shared/schema.js';
+export {
+  toIDBKeyRange,
+  type CollectionSchema,
+  type InferDoc,
+  type QueryOptions,
+  type IDBKeyRangeInit,
+} from './shared/schema.js';
 export type { DocumentMeta } from './shared/meta.js';
 export type {
   WorkerRequest,
@@ -27,6 +33,7 @@ export type {
   SyncConfig,
   ChangeEventPayload,
   ConnectResult,
+  QueryFilter,
 } from './shared/protocol.js';
 export type { DbError, DbErrorCode } from './shared/errors.js';
 export { DatabaseError, dbError } from './shared/errors.js';
