@@ -107,6 +107,16 @@ Open http://localhost:5173 in two tabs to see cross-tab updates. Source: [exampl
 - **SharedWorker** — required for multi-tab sync; supported in Chromium and Firefox (not Safari). Use `mode: 'auto'` (default) for fallback
 - **Same schema** — all tabs must use the same `schema` and `dbName` for one app
 
+## Development
+
+```bash
+npm test            # unit tests
+npm run test:perf   # in-process core throughput / latency (fake-indexeddb)
+npm run bench:e2e   # real Chromium SharedWorker + IndexedDB benches (Playwright)
+```
+
+Details: [docs/testing.md](docs/testing.md).
+
 ## Documentation
 
 | Guide | Topics |
@@ -118,6 +128,7 @@ Open http://localhost:5173 in two tabs to see cross-tab updates. Source: [exampl
 | [bundlers.md](docs/bundlers.md) | Vite / Webpack |
 | [troubleshooting.md](docs/troubleshooting.md) | Common errors |
 | [architecture.md](docs/architecture.md) | Internals (optional) |
+| [testing.md](docs/testing.md) | Unit + performance tests |
 | [publishing.md](docs/publishing.md) | npm publish (maintainers) |
 
 ## License

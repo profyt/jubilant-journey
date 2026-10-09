@@ -17,4 +17,32 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      - run: npm run test:perf
       - run: npm run build
+
+  bench-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      # Example has its own lockfile; needed for vite/tsc in webServer.
+      - run: npm ci --prefix examples/vite-react-todos
+      - run: npx playwright install --with-deps chromium
+      - run: npm run bench:e2e
+        env:
+          CI: true
+          # Soft ceilings: CI VMs can be slower than local Chromium.
+          PERF_MULTIPLIER: '2'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-bench-results
+          path: |
+            e2e-bench-results.json
+            e2e-bench-report.json
+          if-no-files-found: ignore

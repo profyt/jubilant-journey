@@ -28,5 +28,11 @@ export default defineConfig({
     sourcemap: true,
     // Ensure worker assets keep hashed names under assets/ with the site base.
     assetsDir: 'assets',
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        bench: path.resolve(__dirname, 'bench.html'),
+      },
+    },
   },
 });

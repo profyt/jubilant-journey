@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>worker-sync-db — e2e bench</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+      }
+      body {
+        margin: 1.5rem;
+        max-width: 40rem;
+        line-height: 1.45;
+      }
+      #status {
+        font-variant-numeric: tabular-nums;
+        white-space: pre-wrap;
+      }
+      .err {
+        color: #b00020;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>worker-sync-db e2e bench</h1>
+    <p>
+      Minimal page for Playwright. Boots <code>createDatabase</code> with a real
+      SharedWorker + IndexedDB (not fake-indexeddb).
+    </p>
+    <p id="status">booting…</p>
+    <script type="module" src="/src/bench/main.ts"></script>
+  </body>
+</html>
