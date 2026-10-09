@@ -34,6 +34,6 @@ Enable once: repo **Settings → Pages → Source: GitHub Actions**.
 | `src/db/schema.ts` | `defineSchema` + todo types |
 | `src/db/DatabaseProvider.tsx` | `createDatabase` + package `DatabaseProvider` |
 | `src/db/useTodos.ts` | App logic on top of `useQuery` |
-| `src/db/workers.ts` | Vite `?url` worker entries |
+| `src/db/workers.ts` | Vite `?sharedworker&url` / `?worker&url` (deps bundled) |
 | `src/sync/mockAdapter.ts` | In-memory `RemoteSyncAdapter` |
 | `src/App.tsx` / `App.css` | Brand-first demo UI |

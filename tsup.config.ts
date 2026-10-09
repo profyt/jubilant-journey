@@ -27,6 +27,9 @@ export default defineConfig([
       'shared-worker/entry': 'src/shared-worker/entry.ts',
       'dedicated-worker/entry': 'src/dedicated-worker/entry.ts',
     },
-    external: ['idb'],
+    // Bundle idb so worker scripts are self-contained for SharedWorker /
+    // static hosts (GitHub Pages). Bare `import 'idb'` cannot resolve in-browser.
+    noExternal: ['idb'],
   },
 ]);
+

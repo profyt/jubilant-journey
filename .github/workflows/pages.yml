@@ -34,6 +34,24 @@ jobs:
         run: |
           npm ci
           npm run build
+      - name: Verify worker assets have no bare imports
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=(examples/vite-react-todos/dist/assets/*worker*.js examples/vite-react-todos/dist/assets/entry-*.js)
+          # Vite may hash worker chunks without "worker" in the name; scan all JS under assets except the main app bundle.
+          mapfile -t assets < <(find examples/vite-react-todos/dist/assets -name '*.js' ! -name 'index-*.js')
+          if [ "${#assets[@]}" -eq 0 ]; then
+            echo "No worker assets found under dist/assets" >&2
+            exit 1
+          fi
+          for f in "${assets[@]}"; do
+            if grep -E "from ['\"]idb['\"]" "$f"; then
+              echo "Bare idb import in $f — SharedWorker will fail on Pages" >&2
+              exit 1
+            fi
+            echo "OK: $f"
+          done
       - uses: actions/upload-pages-artifact@v3
         with:
           path: examples/vite-react-todos/dist

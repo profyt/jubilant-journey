@@ -28,6 +28,8 @@ const db = await createDatabase({
 
 `sharedWorkerUrl` and `dedicatedWorkerUrl` are `URL` objects built with `new URL('./shared-worker/entry.js', import.meta.url)` **inside the package** (`dist/index.js` → `dist/shared-worker/entry.js`). Bundlers (Vite, Webpack 5) detect this pattern in `node_modules` and emit worker chunks.
 
+Worker entry bundles **inline `idb`** so they are self-contained. Do not rely on copying `dist/*/entry.js` with a bare `?url` import unless your bundler also rewrites that file — otherwise the browser SharedWorker hits an unresolved `import 'idb'`.
+
 You can omit both options — `createDatabase` uses these exports as defaults.
 
 **Do not** write `new URL('worker-sync-db/shared-worker', import.meta.url)` in app code — aliases are not applied there (often causes `Port closed`).

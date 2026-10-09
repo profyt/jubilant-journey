@@ -3,6 +3,7 @@ import type { CollectionSchema } from '../shared/schema.js';
 import { DatabaseError } from '../shared/errors.js';
 import type { RemoteSyncAdapter } from '../sync/RemoteSyncAdapter.js';
 import { PortBridge, type OnConflictHandler } from './PortBridge.js';
+import { resolveWorkerScriptUrl } from './resolveWorkerScriptUrl.js';
 
 export interface SharedWorkerBridgeOptions {
   dbName: string;
@@ -20,10 +21,9 @@ export async function connectSharedWorker(
     throw new Error('SharedWorker is not supported in this environment');
   }
 
-  const url =
-    options.sharedWorkerUrl instanceof URL
-      ? options.sharedWorkerUrl.href
-      : options.sharedWorkerUrl;
+  // Root-relative paths (`/repo/assets/…`) must resolve against the origin so
+  // SharedWorker works under GitHub Pages / non-root bases.
+  const url = resolveWorkerScriptUrl(options.sharedWorkerUrl);
 
   const worker = new SharedWorker(url, {
     name: options.dbName,
