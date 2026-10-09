@@ -9,3 +9,4 @@ dist/
 /e2e-bench-report.json
 /e2e/bench/test-results/
 /e2e/bench/playwright-report/
+/e2e/bench/e2e-bench-report.json
