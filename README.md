@@ -163,7 +163,8 @@ Details: [docs/testing.md](docs/testing.md).
 | [bundlers.md](docs/bundlers.md) | Vite / Webpack |
 | [troubleshooting.md](docs/troubleshooting.md) | Common errors |
 | [architecture.md](docs/architecture.md) | Internals (optional) |
-| [testing.md](docs/testing.md) | Unit + performance tests |
+| [testing.md](docs/testing.md) | Unit + performance + marketing benches |
+| [benchmarks/](docs/benchmarks/) | Last marketing numbers (JSON + snippet) |
 | [publishing.md](docs/publishing.md) | npm publish (maintainers) |
 
 ## License
