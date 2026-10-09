@@ -35,6 +35,7 @@ These tests exercise the same in-process worker core as unit tests — not Playw
 ## Browser e2e benches (Playwright)
 
 ```bash
+npm run example:install           # example has its own lockfile (vite)
 npx playwright install chromium   # once per machine / CI image
 npm run bench:e2e
 ```

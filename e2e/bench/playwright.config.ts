@@ -36,10 +36,12 @@ export default defineConfig({
   webServer: {
     // cwd must be repo root: Playwright defaults to the config directory.
     cwd: repoRoot,
-    // `--` must follow `--prefix` or npm swallows --host/--port.
+    // Example deps must exist (see `npm run example:install` / CI). `--` after --prefix.
     command: `npm run build && npm run example:build && npm run preview --prefix examples/vite-react-todos -- --host 127.0.0.1 --port ${port}`,
     url: `${baseURL}/bench.html`,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
+    stdout: 'pipe',
+    stderr: 'pipe',
   },
 });

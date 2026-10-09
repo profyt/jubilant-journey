@@ -30,10 +30,14 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
+      # Example has its own lockfile; needed for vite/tsc in webServer.
+      - run: npm ci --prefix examples/vite-react-todos
       - run: npx playwright install --with-deps chromium
       - run: npm run bench:e2e
         env:
           CI: true
+          # Soft ceilings: CI VMs can be slower than local Chromium.
+          PERF_MULTIPLIER: '2'
       - uses: actions/upload-artifact@v4
         if: always()
         with:
