@@ -169,14 +169,18 @@ Sends `disconnect`, closes the port, rejects in-flight RPCs.
 
 ## Types
 
-### `CollectionSchema`
+### `CollectionSchema` / `defineSchema`
 
 ```typescript
 type CollectionSchema = Record<
   string,
   { keyPath: string; indexes?: Record<string, string> }
 >;
+
+function defineSchema<S extends CollectionSchema>(schema: S): S;
 ```
+
+Prefer `defineSchema({ ... })` so collection name literals flow into `DatabaseClient`.
 
 ### `DocumentMeta`
 
