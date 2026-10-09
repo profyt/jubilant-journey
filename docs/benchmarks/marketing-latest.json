@@ -1,0 +1,68 @@
+{
+  "generatedAt": "2026-10-09T07:00:15.029Z",
+  "environment": {
+    "browser": "Chromium (Playwright Desktop Chrome)",
+    "note": "Single machine run; absolute ops/s vary by CPU / load. Compare ratios on the same run."
+  },
+  "methodology": {
+    "summary": "Same Chromium process family, same document shape {id,title,kind}, sequential awaited put/get, one equality index query. worker-sync-db uses createDatabase mode=shared (SharedWorker → IndexedDB). Dexie uses main-thread IndexedDB (no worker, no multi-tab fan-out).",
+    "comparable": [
+      "Single-tab CRUD throughput and latency on IndexedDB-backed stores",
+      "Same N, same field shapes, same Chromium"
+    ],
+    "notComparable": [
+      "Multi-tab live subscribe (Dexie baseline has no SharedWorker path here)",
+      "Remote sync / queue (not measured in this marketing suite)",
+      "Across machines or CI vs laptop without re-running both sides together"
+    ]
+  },
+  "throughput": {
+    "workerSyncDb": {
+      "engine": "worker-sync-db",
+      "n": 200,
+      "putMs": 74.5,
+      "getMs": 23.7,
+      "queryMs": 1.7,
+      "putOpsPerSec": 2685,
+      "getOpsPerSec": 8439,
+      "queryOpsPerSec": 588.24,
+      "queryCount": 100
+    },
+    "dexie": {
+      "engine": "dexie",
+      "n": 200,
+      "putMs": 44.9,
+      "getMs": 14.1,
+      "queryMs": 0.7,
+      "putOpsPerSec": 4454,
+      "getOpsPerSec": 14184,
+      "queryOpsPerSec": 1428.57,
+      "queryCount": 100
+    }
+  },
+  "latency": {
+    "workerSyncDb": {
+      "engine": "worker-sync-db",
+      "n": 50,
+      "putP50Ms": 0.2,
+      "putP95Ms": 0.5,
+      "getP50Ms": 0.1,
+      "getP95Ms": 0.2
+    },
+    "dexie": {
+      "engine": "dexie",
+      "n": 50,
+      "putP50Ms": 0.2,
+      "putP95Ms": 0.4,
+      "getP50Ms": 0.1,
+      "getP95Ms": 0.2
+    }
+  },
+  "crossTab": {
+    "engine": "worker-sync-db",
+    "events": 40,
+    "received": 40,
+    "wallMs": 58,
+    "eventsPerSec": 690
+  }
+}
