@@ -1,39 +1,10 @@
-# vite-react-todos
+# Live demo (React todos)
 
-Live demo for [worker-sync-db](../../README.md): SharedWorker todos, React hooks (`useQuery` / `useSyncStatus`), mock remote sync, multi-tab fan-out.
+Interactive demo for [worker-sync-db](../../README.md).
 
-## Prerequisites
+- **Online:** https://profyt.github.io/jubilant-journey/
+- **Local:** from repo root — `npm install`, `npm run build`, `npm run example:dev`, then open two tabs on http://localhost:5173
 
-```bash
-cd ../..
-npm install
-npm run build
-```
+Uses package React hooks (`useQuery`, `useSyncStatus`) and a mock sync adapter (no real server).
 
-## Run locally
-
-```bash
-npm install
-npm run dev
-```
-
-Open http://localhost:5173 in **two tabs**.
-
-## GitHub Pages
-
-CI workflow [pages.yml](../../.github/workflows/pages.yml) deploys this app to:
-
-https://profyt.github.io/jubilant-journey/
-
-Enable once: repo **Settings → Pages → Source: GitHub Actions**.
-
-## Code map
-
-| File | Purpose |
-|------|---------|
-| `src/db/schema.ts` | `defineSchema` + todo types |
-| `src/db/DatabaseProvider.tsx` | `createDatabase` + package `DatabaseProvider` |
-| `src/db/useTodos.ts` | App logic on top of `useQuery` |
-| `src/db/workers.ts` | Vite `?sharedworker&url` / `?worker&url` (deps bundled) |
-| `src/sync/mockAdapter.ts` | In-memory `RemoteSyncAdapter` |
-| `src/App.tsx` / `App.css` | Brand-first demo UI |
+For maintainer setup (Pages deploy, worker bundling), see the root [README](../../README.md) and [docs/bundlers.md](../../docs/bundlers.md).

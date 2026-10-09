@@ -25,10 +25,11 @@ export function App() {
     return (
       <div className="shell">
         <div className="boot-error">
-          <p className="boot-error__title">Could not open the SharedWorker database</p>
+          <p className="boot-error__title">Could not start the local database</p>
           <p>{error}</p>
           <p className="boot-error__hint">
-            Build the library first: <code>npm run build</code> at the repo root.
+            If you run from source, build the library at the repo root:{' '}
+            <code>npm run build</code>.
           </p>
         </div>
       </div>
@@ -56,8 +57,8 @@ export function App() {
         <p className="hero__brand">worker-sync-db</p>
         <h1 className="hero__headline">One database. Every tab. Offline-first.</h1>
         <p className="hero__lede">
-          Typed IndexedDB inside a SharedWorker — mutations fan out across tabs,
-          with a mock remote sync you can trigger live.
+          A small todos app powered by worker-sync-db: edits save instantly,
+          every open tab stays in sync, and you can push changes to a mock server.
         </p>
         <div className="hero__cta">
           <a className="btn btn--primary" href="#playground">
@@ -81,8 +82,8 @@ export function App() {
         <div className="playground__head">
           <h2>Live todos</h2>
           <p>
-            Writes hit IndexedDB immediately. SharedWorker notifies every tab.
-            Sync pushes the offline queue to an in-memory mock API.
+            Add or complete tasks — they persist offline. Open a second tab to see
+            the same list update. Use Sync now to simulate sending data to your backend.
           </p>
         </div>
 
@@ -147,7 +148,7 @@ export function App() {
         </div>
 
         {loading && todos.length === 0 ? (
-          <p className="empty">Opening SharedWorker…</p>
+          <p className="empty">Loading…</p>
         ) : todos.length === 0 ? (
           <p className="empty">No todos yet — add one, then open a second tab.</p>
         ) : (
