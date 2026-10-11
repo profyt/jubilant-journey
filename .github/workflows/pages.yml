@@ -75,8 +75,9 @@ jobs:
           cp -a site/.vitepress/dist/. _pages/docs/
           test -f _pages/index.html
           test -f _pages/docs/index.html
+          test -f _pages/docs/ru/index.html
           echo "Assembled:"
-          find _pages -maxdepth 2 -type f \( -name 'index.html' -o -name '*.html' \) | sort | head -40
+          find _pages -maxdepth 3 -type f \( -name 'index.html' -o -name '*.html' \) | sort | head -60
 
       - uses: actions/upload-pages-artifact@v3
         with:
