@@ -42,6 +42,8 @@ Prefer Dexie / `idb` / another stack if:
 
 ## Install snippet
 
+Primary (npmjs, unscoped):
+
 ```bash
 npm install worker-sync-db
 ```
@@ -54,6 +56,8 @@ import {
   dedicatedWorkerUrl,
 } from 'worker-sync-db';
 ```
+
+Optional mirror on **GitHub Packages**: `@profyt/worker-sync-db` (scoped; needs `.npmrc` map for `@profyt` → `https://npm.pkg.github.com`). Prefer the npmjs name in app docs unless the consumer already uses GitHub Packages. Maintainers: see `docs/publishing.md` and `.github/workflows/publish.yml`.
 
 ## Key docs
 
@@ -74,6 +78,8 @@ import {
 | `site/` | VitePress docs (EN + `site/ru/`) |
 | `examples/vite-react-todos/` | Live demo app (UI strings are English) |
 | `docs/` | Repo markdown guides (API wording source) |
+| `docs/publishing.md` | Dual publish to npmjs + GitHub Packages |
+| `.github/workflows/publish.yml` | Tag / dispatch publish workflow |
 | `llms.txt` / `llms-full.txt` | Agent crawler briefs (deployed to Pages root) |
 
 ## Tests before claiming success

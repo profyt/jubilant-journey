@@ -48,9 +48,15 @@ Under the hood the library uses a **SharedWorker** when the browser supports it;
 
 ## Install
 
+**npmjs (recommended):**
+
 ```bash
 npm install worker-sync-db
 ```
+
+**GitHub Packages** (same code, scoped name for the repo Packages tab): `@profyt/worker-sync-db` — see [docs/publishing.md](docs/publishing.md#install-from-each-registry) for `.npmrc` registry mapping.
+
+Maintainers: dual publish is automated by [.github/workflows/publish.yml](.github/workflows/publish.yml) on `v*` tags (needs repo secret `NPM_TOKEN`). Details: [docs/publishing.md](docs/publishing.md).
 
 Peer: **TypeScript 5+** (for types). **React 18+** only if you import `worker-sync-db/react`.
 
@@ -201,7 +207,7 @@ Repo markdown (source of truth for API wording; the site adapts these):
 | [architecture.md](docs/architecture.md) | Internals (optional) |
 | [testing.md](docs/testing.md) | Unit + performance + marketing benches |
 | [benchmarks/](docs/benchmarks/) | Last marketing numbers (JSON + snippet) |
-| [publishing.md](docs/publishing.md) | npm publish (maintainers) |
+| [publishing.md](docs/publishing.md) | Dual publish: npmjs (`worker-sync-db`) + GitHub Packages (`@profyt/worker-sync-db`) |
 
 Local docs preview: `npm run site:install && npm run docs:dev`.
 
