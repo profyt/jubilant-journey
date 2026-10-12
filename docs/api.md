@@ -142,6 +142,8 @@ interface SyncStatus {
   lastSyncAt: number | null;
   lastError: string | null;
   online: boolean;
+  /** Next debounced / backoff auto-sync (epoch ms), or null */
+  nextSyncAt: number | null;
 }
 ```
 

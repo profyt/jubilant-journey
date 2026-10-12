@@ -25,10 +25,22 @@ function createMockDb(initial: Array<Record<string, unknown> & { id: string }> =
       return () => listeners.delete(listener);
     },
     async getSyncStatus() {
-      return { pending: 2, lastSyncAt: null, lastError: null, online: true };
+      return {
+        pending: 2,
+        lastSyncAt: null,
+        lastError: null,
+        online: true,
+        nextSyncAt: null,
+      };
     },
     onSyncStatusChange(listener: (s: unknown) => void) {
-      listener({ pending: 2, lastSyncAt: null, lastError: null, online: true });
+      listener({
+        pending: 2,
+        lastSyncAt: null,
+        lastError: null,
+        online: true,
+        nextSyncAt: null,
+      });
       return () => {};
     },
     emit(event: unknown) {
