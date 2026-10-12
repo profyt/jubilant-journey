@@ -26,13 +26,15 @@ export {
   computeSchemaVersion,
   schemasEqual,
   type CollectionSchema,
+  type CollectionDef,
   type InferDoc,
+  type DocInput,
   type QueryOptions,
   type IDBKeyRangeInit,
   type SchemaChangeKind,
   type SchemaChangeResult,
 } from './shared/schema.js';
-export { defineSchema } from './shared/defineSchema.js';
+export { defineSchema, defineCollection } from './shared/defineSchema.js';
 export type { DocumentMeta } from './shared/meta.js';
 export type {
   WorkerRequest,

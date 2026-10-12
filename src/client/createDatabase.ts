@@ -6,6 +6,7 @@ import type {
 } from '../shared/protocol.js';
 import type {
   CollectionSchema,
+  DocInput,
   InferDoc,
   QueryOptions,
 } from '../shared/schema.js';
@@ -64,7 +65,7 @@ export interface DatabaseClient<S extends CollectionSchema> {
   ): Promise<InferDoc<S, C> | null>;
   put<C extends keyof S & string>(
     collection: C,
-    doc: Record<string, unknown> & { id: string },
+    doc: DocInput<S, C>,
   ): Promise<InferDoc<S, C>>;
   putMany<C extends keyof S & string>(
     collection: C,
@@ -262,7 +263,7 @@ function createClientFromBridge<S extends CollectionSchema>(
       return bridge.call({
         type: 'put',
         collection,
-        doc,
+        doc: doc as Record<string, unknown> & { id: string },
       }) as Promise<InferDoc<S, typeof collection>>;
     },
 

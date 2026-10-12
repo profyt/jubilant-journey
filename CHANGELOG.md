@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `defineCollection<TDoc>()` + stronger `InferDoc` / `DocInput` so typed schemas flow into `get`/`put`/`query` (plain schemas unchanged)
 - Dedicated-mode DX: `getWorkerMode()` / `getCrossTabTransport()`, optional `BroadcastChannel` cross-tab relay (`crossTabFallback`, default `auto`)
 
 ### Changed

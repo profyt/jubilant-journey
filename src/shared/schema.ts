@@ -1,14 +1,43 @@
 import type { DocumentMeta } from './meta.js';
 
-export type CollectionSchema = Record<
-  string,
-  { keyPath: string; indexes?: Record<string, string> }
->;
+/**
+ * Collection store definition. Pass a document shape via `defineCollection<TDoc>(…)`
+ * so `InferDoc` can recover field types. Plain `{ keyPath, indexes }` stays
+ * `Record<string, unknown> & DocumentMeta` (backwards compatible).
+ */
+export type CollectionDef<
+  TDoc extends Record<string, unknown> = Record<string, unknown>,
+> = {
+  keyPath: string;
+  indexes?: Record<string, string>;
+  /** Type-only phantom — never set at runtime. */
+  readonly __doc?: TDoc;
+};
 
+export type CollectionSchema = Record<string, CollectionDef>;
+
+/**
+ * Document type for collection `C` in schema `S`, including soft-delete meta.
+ * When the collection was declared with `defineCollection<MyDoc>(…)`, fields of
+ * `MyDoc` are preserved; otherwise falls back to `Record<string, unknown>`.
+ */
 export type InferDoc<
   S extends CollectionSchema,
-  _C extends keyof S & string = keyof S & string,
-> = Record<string, unknown> & DocumentMeta;
+  C extends keyof S & string = keyof S & string,
+> = DocumentMeta &
+  (S[C] extends CollectionDef<infer D>
+    ? Record<string, unknown> extends D
+      ? Record<string, unknown>
+      : D
+    : Record<string, unknown>);
+
+/** Input to `put` — user fields + required `id`; meta fields optional/ignored. */
+export type DocInput<
+  S extends CollectionSchema,
+  C extends keyof S & string,
+> = Omit<InferDoc<S, C>, '_version' | '_updatedAt' | '_deleted'> & {
+  id: string;
+};
 
 export interface IDBKeyRangeInit {
   lower?: IDBValidKey;

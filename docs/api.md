@@ -221,18 +221,30 @@ Sends `disconnect`, closes the port, rejects in-flight RPCs.
 
 ## Types
 
-### `CollectionSchema` / `defineSchema`
+### `CollectionSchema` / `defineSchema` / `defineCollection`
 
 ```typescript
-type CollectionSchema = Record<
-  string,
-  { keyPath: string; indexes?: Record<string, string> }
->;
+type CollectionDef<TDoc = Record<string, unknown>> = {
+  keyPath: string;
+  indexes?: Record<string, string>;
+};
+
+type CollectionSchema = Record<string, CollectionDef>;
 
 function defineSchema<S extends CollectionSchema>(schema: S): S;
+
+function defineCollection<TDoc extends Record<string, unknown>>(def: {
+  keyPath: Extract<keyof TDoc, string>;
+  indexes?: Record<string, Extract<keyof TDoc, string>>;
+}): CollectionDef<TDoc>;
+
+type InferDoc<S, C> = DocumentMeta & /* TDoc or Record<string, unknown> */;
+type DocInput<S, C> = Omit<InferDoc<S, C>, '_version' | '_updatedAt' | '_deleted'> & {
+  id: string;
+};
 ```
 
-Prefer `defineSchema({ ... })` so collection name literals flow into `DatabaseClient`.
+Prefer `defineSchema({ todos: defineCollection<Todo>({ … }) })` so collection names **and** document fields flow into `DatabaseClient`.
 
 ### `DocumentMeta`
 
