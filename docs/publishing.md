@@ -43,10 +43,11 @@ Workflow: **Publish** (`.github/workflows/publish.yml`).
 
 **What it does**
 
-1. `npm ci` → typecheck → test → build
-2. Publishes `worker-sync-db` to `https://registry.npmjs.org` with `NPM_TOKEN`
-3. Sets `name` to `@profyt/worker-sync-db` in the job workspace only
-4. Publishes to `https://npm.pkg.github.com` with `GITHUB_TOKEN` (`packages: write`)
+1. Shared `build` job: `npm ci` → typecheck → test → build (artifact)
+2. Independent `publish-npmjs` job: publishes `worker-sync-db` to `https://registry.npmjs.org` with `NPM_TOKEN`
+3. Independent `publish-github-packages` job: sets `name` to `@profyt/worker-sync-db` in the job workspace only, publishes to `https://npm.pkg.github.com` with `GITHUB_TOKEN` (`packages: write`)
+
+Jobs are independent: a missing `NPM_TOKEN` fails only the npmjs job and does not block GitHub Packages. `workflow_dispatch` accepts `target`: `both` | `npmjs` | `github-packages`.
 
 **Secrets / permissions**
 
@@ -55,7 +56,7 @@ Workflow: **Publish** (`.github/workflows/publish.yml`).
 | Repository secret `NPM_TOKEN` | Publish to npmjs.org |
 | Job `GITHUB_TOKEN` + `packages: write` | Publish to GitHub Packages (no extra secret) |
 
-Create `NPM_TOKEN` on npmjs as an **automation** or **granular** access token that can publish `worker-sync-db` and **bypass 2FA / OTP** (account OTP cannot be entered from Actions). Add it under **Settings → Secrets and variables → Actions → `NPM_TOKEN`**.
+Create `NPM_TOKEN` on npmjs as an **automation** or **granular** access token that can publish `worker-sync-db` and **bypass 2FA / OTP** (account OTP cannot be entered from Actions). Add it under **Settings → Secrets and variables → Actions → `NPM_TOKEN`**. Classic tokens and granular tokens without Bypass 2FA will fail with `EOTP` / `403`.
 
 After the first successful GitHub Packages publish, open the repo **Packages** tab (or the package URL above). If the package is not linked yet, use the package settings **Connect repository** and select `profyt/jubilant-journey` (normally automatic when `repository` is set).
 
