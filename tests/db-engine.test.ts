@@ -55,6 +55,24 @@ describe('DbEngine', () => {
     expect(pending[0]?.kind).toBe('put');
   });
 
+  it('counts live documents and respects index/range', async () => {
+    await engine.put('todos', { id: '1', title: 'A', status: 'open' });
+    await engine.put('todos', { id: '2', title: 'B', status: 'done' });
+    await engine.put('todos', { id: '3', title: 'C', status: 'open' });
+    await engine.delete('todos', '3');
+    expect(await engine.count({ collection: 'todos' })).toBe(2);
+    expect(
+      await engine.count({ collection: 'todos', includeDeleted: true }),
+    ).toBe(3);
+    expect(
+      await engine.count({
+        collection: 'todos',
+        index: 'byStatus',
+        range: { lower: 'open', upper: 'open' },
+      }),
+    ).toBe(1);
+  });
+
   it('queries by index', async () => {
     await engine.put('todos', { id: '1', title: 'A', status: 'open' });
     await engine.put('todos', { id: '2', title: 'B', status: 'done' });

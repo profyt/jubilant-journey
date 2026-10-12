@@ -127,6 +127,19 @@ query<C extends keyof S & string>(
 
 ---
 
+### `count(collection, opts?)`
+
+```typescript
+count<C extends keyof S & string>(
+  collection: C,
+  opts?: Omit<QueryOptions, 'limit'>,
+): Promise<number>;
+```
+
+Returns how many documents match the same `index` / `range` / `includeDeleted` options as `query` (soft-deleted excluded by default). Prefer this over `query(...).length` for large collections.
+
+---
+
 ### `subscribe(collection, listener, filter?)`
 
 ```typescript
