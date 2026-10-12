@@ -7,6 +7,7 @@ import type {
   FetchSyncConfig,
   PendingOp,
   RemoteChange,
+  SyncSchedulerOptions,
   SyncStatus,
 } from '../sync/RemoteSyncAdapter.js';
 import type { ClientRegistry } from './ClientRegistry.js';
@@ -15,12 +16,17 @@ import type { DbEngine } from './DbEngine.js';
 type PullResult = { changes: RemoteChange[]; nextCursor: string | null };
 type PushResult = { applied: string[]; conflicts?: Array<{ opId: string; reason: string }> };
 
+const DEFAULT_DEBOUNCE_MS = 300;
+const DEFAULT_BASE_BACKOFF_MS = 1000;
+const DEFAULT_MAX_BACKOFF_MS = 30_000;
+
 export class RemoteSync {
   private status: SyncStatus = {
     pending: 0,
     lastSyncAt: null,
     lastError: null,
     online: typeof navigator !== 'undefined' ? navigator.onLine : true,
+    nextSyncAt: null,
   };
 
   private syncConfig: SyncConfig | null = null;
@@ -35,20 +41,43 @@ export class RemoteSync {
     }
   >();
 
+  private debounceMs: number;
+  private baseBackoffMs: number;
+  private maxBackoffMs: number;
+  private failureAttempt = 0;
+  private scheduleTimer: ReturnType<typeof setTimeout> | null = null;
+
   constructor(
     private readonly db: DbEngine,
     private readonly registry: ClientRegistry,
+    scheduler: SyncSchedulerOptions = {},
   ) {
+    this.debounceMs = scheduler.debounceMs ?? DEFAULT_DEBOUNCE_MS;
+    this.baseBackoffMs = scheduler.baseBackoffMs ?? DEFAULT_BASE_BACKOFF_MS;
+    this.maxBackoffMs = scheduler.maxBackoffMs ?? DEFAULT_MAX_BACKOFF_MS;
+
     if (typeof self !== 'undefined' && 'addEventListener' in self) {
       self.addEventListener('online', () => {
         this.status.online = true;
+        this.failureAttempt = 0;
         this.broadcastStatus();
-        void this.syncNow();
+        this.scheduleSync({ debounceMs: 0 });
       });
       self.addEventListener('offline', () => {
         this.status.online = false;
+        this.clearSchedule();
         this.broadcastStatus();
       });
+    }
+  }
+
+  setSchedulerOptions(options: SyncSchedulerOptions): void {
+    if (options.debounceMs !== undefined) this.debounceMs = options.debounceMs;
+    if (options.baseBackoffMs !== undefined) {
+      this.baseBackoffMs = options.baseBackoffMs;
+    }
+    if (options.maxBackoffMs !== undefined) {
+      this.maxBackoffMs = options.maxBackoffMs;
     }
   }
 
@@ -91,12 +120,72 @@ export class RemoteSync {
     waiter.resolve(msg);
   }
 
+  /**
+   * Debounced auto-sync after mutations. No-op when offline or no remote config.
+   */
+  scheduleSync(options?: { debounceMs?: number }): void {
+    if (!this.syncConfig || !this.status.online) {
+      return;
+    }
+    const wait = options?.debounceMs ?? this.debounceMs;
+    this.armTimer(wait);
+  }
+
+  /** Cancel pending debounce / backoff timers (tests / teardown). */
+  dispose(): void {
+    this.clearSchedule();
+    for (const waiter of this.delegateWaiters.values()) {
+      clearTimeout(waiter.timer);
+      waiter.reject(new Error('RemoteSync disposed'));
+    }
+    this.delegateWaiters.clear();
+  }
+
+  /**
+   * Immediate sync (user/API). Clears debounce; on failure schedules backoff retry.
+   */
   async syncNow(): Promise<SyncStatus> {
+    this.clearSchedule();
+    return this.runSync({ force: true });
+  }
+
+  private armTimer(delayMs: number): void {
+    if (this.scheduleTimer !== null) {
+      clearTimeout(this.scheduleTimer);
+      this.scheduleTimer = null;
+    }
+    const nextSyncAt = Date.now() + delayMs;
+    this.status.nextSyncAt = nextSyncAt;
+    this.broadcastStatus();
+    this.scheduleTimer = setTimeout(() => {
+      this.scheduleTimer = null;
+      this.status.nextSyncAt = null;
+      void this.runSync({ force: false });
+    }, delayMs);
+  }
+
+  private clearSchedule(): void {
+    if (this.scheduleTimer !== null) {
+      clearTimeout(this.scheduleTimer);
+      this.scheduleTimer = null;
+    }
+    if (this.status.nextSyncAt !== null) {
+      this.status.nextSyncAt = null;
+      this.broadcastStatus();
+    } else {
+      this.status.nextSyncAt = null;
+    }
+  }
+
+  private async runSync(options: { force: boolean }): Promise<SyncStatus> {
     if (this.syncing) {
       return this.getStatus();
     }
     if (!this.syncConfig) {
       await this.refreshPendingCount();
+      return this.getStatus();
+    }
+    if (!this.status.online && !options.force) {
       return this.getStatus();
     }
 
@@ -109,14 +198,29 @@ export class RemoteSync {
       }
       this.status.lastSyncAt = Date.now();
       this.status.lastError = null;
+      this.failureAttempt = 0;
     } catch (err) {
       this.status.lastError =
         err instanceof Error ? err.message : 'Sync failed';
+      this.failureAttempt += 1;
+      this.scheduleBackoff();
     } finally {
       this.syncing = false;
       await this.refreshPendingCount();
     }
     return this.getStatus();
+  }
+
+  private scheduleBackoff(): void {
+    if (!this.syncConfig || !this.status.online) {
+      return;
+    }
+    const exp = Math.min(
+      this.maxBackoffMs,
+      this.baseBackoffMs * 2 ** Math.max(0, this.failureAttempt - 1),
+    );
+    const jitter = Math.floor(Math.random() * Math.max(1, exp * 0.2));
+    this.armTimer(exp + jitter);
   }
 
   private async syncWithFetch(config: FetchSyncConfig): Promise<void> {

@@ -49,6 +49,7 @@ export type {
   PendingOp,
   RemoteChange,
   SyncStatus,
+  SyncSchedulerOptions,
   Conflict,
   FetchSyncConfig,
 } from './sync/RemoteSyncAdapter.js';

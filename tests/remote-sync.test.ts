@@ -11,12 +11,18 @@ describe('RemoteSync', () => {
   let remoteSync: RemoteSync;
 
   beforeEach(async () => {
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
     await engine.init(`sync-test-${Math.random()}`, schema);
     remoteSync = new RemoteSync(engine, registry);
   });
 
   afterEach(() => {
+    remoteSync.dispose();
     vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
   it('syncs via fetch config and clears applied ops', async () => {
@@ -105,5 +111,87 @@ describe('RemoteSync', () => {
     expect(remoteSync.hasConfig()).toBe(false);
     remoteSync.setConfig({ kind: 'delegate' });
     expect(remoteSync.hasConfig()).toBe(true);
+  });
+
+  it('scheduleSync debounces before calling fetch', async () => {
+    await engine.put('items', { id: '1', value: 'a' });
+    const pending = await engine.getPendingOps();
+    const opId = pending[0]!.opId;
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ applied: [opId] }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ changes: [], nextCursor: null }),
+      });
+    vi.stubGlobal('fetch', fetchMock);
+
+    remoteSync.setSchedulerOptions({ debounceMs: 200 });
+    remoteSync.setConfig({
+      kind: 'fetch',
+      pullUrl: '/api/pull',
+      pushUrl: '/api/push',
+    });
+
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    remoteSync.scheduleSync();
+    remoteSync.scheduleSync();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(remoteSync.getStatus().nextSyncAt).not.toBeNull();
+
+    await vi.advanceTimersByTimeAsync(200);
+    // Flush the async runSync started by the timer.
+    await Promise.resolve();
+    await Promise.resolve();
+    await vi.waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    expect(remoteSync.getStatus().nextSyncAt).toBeNull();
+    expect(await engine.getPendingOps()).toHaveLength(0);
+  });
+
+  it('schedules backoff after a failed syncNow', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    await engine.put('items', { id: '1', value: 'a' });
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    remoteSync.setSchedulerOptions({
+      debounceMs: 50,
+      baseBackoffMs: 1000,
+      maxBackoffMs: 5000,
+    });
+    remoteSync.setConfig({
+      kind: 'fetch',
+      pullUrl: '/api/pull',
+      pushUrl: '/api/push',
+    });
+
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const status = await remoteSync.syncNow();
+    expect(status.lastError).toMatch(/Push failed/);
+    expect(status.nextSyncAt).not.toBeNull();
+
+    const callsAfterFail = fetchMock.mock.calls.length;
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ applied: [], changes: [], nextCursor: null }),
+    });
+
+    await vi.advanceTimersByTimeAsync(1000);
+    await Promise.resolve();
+    await Promise.resolve();
+    await vi.waitFor(() => {
+      expect(fetchMock.mock.calls.length).toBeGreaterThan(callsAfterFail);
+    });
   });
 });
