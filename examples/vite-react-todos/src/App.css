@@ -281,13 +281,11 @@ code {
 }
 
 .playground__chrome {
+  position: relative;
+  z-index: 2;
   flex: 0 0 auto;
-  background: linear-gradient(
-    180deg,
-    rgba(4, 28, 32, 0.92) 0%,
-    rgba(4, 28, 32, 0.78) 100%
-  );
-  backdrop-filter: blur(6px);
+  background: #052428;
+  box-shadow: 0 10px 18px -12px rgba(0, 0, 0, 0.65);
 }
 
 .playground__list {
