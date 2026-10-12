@@ -45,10 +45,10 @@ Runs Chromium against the example’s `/bench.html` page with a **real SharedWor
 | Case | What |
 |------|------|
 | Throughput / latency | put/get/query through `createDatabase` in the browser |
-| Cross-tab fan-out | two tabs, same `dbName`, subscribe receives puts |
+| Cross-tab fan-out | **Hard CI gate:** two tabs, same `dbName`, SharedWorker `subscribe` sees puts; reader can `get` last doc |
 | Sync round-trip | fast in-page mock remote (`?remote=1`), queue drains |
 
-Soft ceilings only (catastrophic regressions). Metrics: console `[bench:e2e] …` and `e2e-bench-results.json`. Slow runners:
+Throughput/latency/sync use soft ceilings (catastrophic regressions). Cross-tab fan-out **must** receive all events (no soft skip). Metrics: console `[bench:e2e] …` and `e2e-bench-results.json`. Slow runners:
 
 ```bash
 PERF_MULTIPLIER=2 npm run bench:e2e
