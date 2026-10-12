@@ -1,0 +1,72 @@
+# worker-sync-db
+
+> Offline-first IndexedDB for browser SPAs: SharedWorker multi-tab live updates and bring-your-own (BYO) sync to your API. TypeScript core; optional React hooks. Not a sync SaaS.
+
+npm: `worker-sync-db` · MIT · browser-only (needs `window`)
+
+## When to use
+
+- Web app must work offline and catch up when online
+- Multiple tabs should show the same data without custom BroadcastChannel glue
+- You want IndexedDB + TypeScript and **your** push/pull backend (not Dexie Cloud / Firebase lock-in)
+- Optional React live queries (`worker-sync-db/react`)
+
+## When not to use
+
+- Server-side / Node storage (this is browser IndexedDB only)
+- You need CRDTs or complex conflict resolution (v1 is last-write-wins on timestamps)
+- Single-tab CRUD with no multi-tab or BYO sync needs — Dexie or raw `idb` may be simpler
+- Safari-first multi-tab sync (SharedWorker missing; `mode: 'auto'` falls back to dedicated, no cross-tab)
+
+## Install
+
+```bash
+npm install worker-sync-db
+```
+
+Peer: TypeScript 5+. React 18+ only if you import `worker-sync-db/react`.
+
+## Quick start
+
+```typescript
+import {
+  createDatabase,
+  defineSchema,
+  sharedWorkerUrl,
+  dedicatedWorkerUrl,
+} from 'worker-sync-db';
+
+const schema = defineSchema({
+  todos: { keyPath: 'id', indexes: { byStatus: 'status' } },
+});
+
+const db = await createDatabase({
+  schema,
+  dbName: 'my-app',
+  sharedWorker: sharedWorkerUrl,
+  dedicatedWorker: dedicatedWorkerUrl,
+});
+
+await db.put('todos', { id: '1', title: 'Buy milk', status: 'open' });
+db.subscribe('todos', (e) => {
+  if (e.type === 'put') console.log(e.doc);
+});
+```
+
+## Links
+
+- Docs: https://profyt.github.io/jubilant-journey/docs/
+- Docs (RU): https://profyt.github.io/jubilant-journey/docs/ru/
+- Live demo: https://profyt.github.io/jubilant-journey/
+- npm: https://www.npmjs.com/package/worker-sync-db
+- GitHub: https://github.com/profyt/jubilant-journey
+- Full agent brief: https://profyt.github.io/jubilant-journey/llms-full.txt
+- Repo AGENTS.md: https://github.com/profyt/jubilant-journey/blob/main/AGENTS.md
+
+## Decision vs Dexie
+
+| Need | Prefer |
+|------|--------|
+| Single-tab IndexedDB CRUD, mature ecosystem | Dexie |
+| SharedWorker multi-tab live fan-out + optional BYO sync queue | worker-sync-db |
+| Hosted sync cloud | Dexie Cloud / Firebase / etc. (not this lib) |

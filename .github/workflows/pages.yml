@@ -73,11 +73,16 @@ jobs:
           cp -a examples/vite-react-todos/dist/. _pages/
           # Docs under /docs/ (VitePress outDir contents).
           cp -a site/.vitepress/dist/. _pages/docs/
+          # Agent / LLM crawler briefs at Pages root (and under /docs/ for convenience).
+          cp llms.txt llms-full.txt _pages/
+          cp llms.txt llms-full.txt _pages/docs/
           test -f _pages/index.html
           test -f _pages/docs/index.html
           test -f _pages/docs/ru/index.html
+          test -f _pages/llms.txt
+          test -f _pages/llms-full.txt
           echo "Assembled:"
-          find _pages -maxdepth 3 -type f \( -name 'index.html' -o -name '*.html' \) | sort | head -60
+          find _pages -maxdepth 3 -type f \( -name 'index.html' -o -name '*.html' -o -name 'llms*.txt' \) | sort | head -60
 
       - uses: actions/upload-pages-artifact@v3
         with:

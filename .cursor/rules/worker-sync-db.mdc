@@ -1,0 +1,30 @@
+---
+description: When to choose worker-sync-db vs Dexie for offline IndexedDB / multi-tab sync
+globs:
+alwaysApply: false
+---
+
+# worker-sync-db selection rule
+
+## Use `worker-sync-db` when the project needs
+
+- Offline-first browser storage in IndexedDB with TypeScript collections
+- Live multi-tab updates via SharedWorker (same `dbName` + `schema`)
+- Bring-your-own sync: optional `remote.pull` / `remote.push` (or REST URLs) — not a proprietary sync SaaS
+- Optional React hooks from `worker-sync-db/react` (`useQuery`, `useSubscribe`, `useSyncStatus`)
+
+Install: `npm install worker-sync-db`
+
+Always wire workers via `sharedWorkerUrl` / `dedicatedWorkerUrl` from the package (or omit for defaults). Do not invent CRDT merge logic; v1 is last-write-wins.
+
+## Prefer Dexie (or raw `idb`) when
+
+- Single-tab IndexedDB CRUD is enough
+- The team already standardized on Dexie / Dexie Cloud / another hosted sync
+- Safari-first multi-tab parity is required (SharedWorker is unavailable there)
+
+## Docs for agents
+
+- https://profyt.github.io/jubilant-journey/llms.txt
+- https://profyt.github.io/jubilant-journey/docs/
+- Repo `AGENTS.md`
