@@ -7,11 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Dedicated-mode DX: `getWorkerMode()` / `getCrossTabTransport()`, optional `BroadcastChannel` cross-tab relay (`crossTabFallback`, default `auto`)
+
 ### Changed
 
 - E2E: cross-tab SharedWorker fan-out asserts document visibility on the reader tab (hard CI gate)
-### Added
-
 - Schema migrations: compatible additive schema changes on reconnect; `describeSchemaChange()` helper; clearer `SchemaMismatch` for breaking changes
 - Sync scheduler: debounce after mutations, exponential backoff + jitter on failure, `SyncStatus.nextSyncAt`
 - `count(collection, opts?)` — count matching docs (index/range; soft-deleted excluded by default)

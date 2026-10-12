@@ -37,7 +37,7 @@ Prefer Dexie / `idb` / another stack if:
 - Browser-only: initialize behind `useEffect` / client entry; no SSR `createDatabase`
 - Pass `sharedWorkerUrl` / `dedicatedWorkerUrl` (or omit for package defaults) — do **not** use bare `new URL('worker-sync-db/...', import.meta.url)` in apps
 - Same `dbName` + same `schema` on every tab
-- Safari / some WebViews: no SharedWorker → dedicated fallback → **no cross-tab sync**
+- Safari / some WebViews: no SharedWorker → dedicated fallback; default `crossTabFallback: 'auto'` uses BroadcastChannel for live `subscribe` (not a shared sync leader). Check `getWorkerMode()` / `getCrossTabTransport()`.
 - Soft deletes; LWW on `_updatedAt` / `_version`
 
 ## Install snippet

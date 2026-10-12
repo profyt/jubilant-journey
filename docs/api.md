@@ -17,6 +17,7 @@ function createDatabase<S extends CollectionSchema>(
 | `sharedWorker` | `string \| URL` | recommended | URL to shared-worker bundle |
 | `dedicatedWorker` | `string \| URL` | recommended | URL to dedicated-worker bundle |
 | `mode` | `'auto' \| 'shared' \| 'dedicated'` | no | Default `'auto'` |
+| `crossTabFallback` | `'auto' \| 'broadcast-channel' \| 'none'` | no | Default `'auto'`: in dedicated mode, relay live changes via `BroadcastChannel` |
 | `remote` | `RemoteSyncAdapter \| FetchSyncConfig` | no | Enables sync |
 | `onConflict` | `(conflict) => void` | no | Push conflicts (delegate adapter) |
 

@@ -3,10 +3,13 @@ export { sharedWorkerUrl, dedicatedWorkerUrl } from './workerUrls.js';
 export type {
   ChangeEvent,
   CreateDatabaseOptions,
+  CrossTabFallback,
+  CrossTabTransport,
   DatabaseClient,
   RemoteConfig,
   WorkerMode,
 } from './client/createDatabase.js';
+export { resolveCrossTabFallback } from './client/createDatabase.js';
 
 export { PortBridge } from './client/PortBridge.js';
 export type {
