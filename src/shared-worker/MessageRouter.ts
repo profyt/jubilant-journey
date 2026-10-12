@@ -158,6 +158,16 @@ export class MessageRouter {
         return { kind: 'response', requestId, ok: true, data: docs };
       }
 
+      case 'count': {
+        const n = await this.db.count({
+          collection: request.collection,
+          index: request.index,
+          range: request.range,
+          includeDeleted: request.includeDeleted,
+        });
+        return { kind: 'response', requestId, ok: true, data: n };
+      }
+
       case 'put': {
         const enqueueSync = this.remoteSync.hasConfig();
         const { doc } = await this.db.put(request.collection, request.doc, {
@@ -195,6 +205,85 @@ export class MessageRouter {
           this.remoteSync.scheduleSync();
         }
         return { kind: 'response', requestId, ok: true, data: result.doc };
+      }
+
+      case 'putMany': {
+        const enqueueSync = this.remoteSync.hasConfig();
+        const results = await this.db.putMany(
+          request.collection,
+          request.docs,
+          { enqueueSync },
+        );
+        for (const { doc } of results) {
+          this.registry.broadcastChange({
+            collection: request.collection,
+            type: 'put',
+            doc,
+            id: doc.id,
+          });
+        }
+        if (enqueueSync && results.length > 0) {
+          await this.remoteSync.refreshPendingCount();
+          void this.remoteSync.syncNow();
+        }
+        return {
+          kind: 'response',
+          requestId,
+          ok: true,
+          data: results.map((r) => r.doc),
+        };
+      }
+
+      case 'deleteMany': {
+        const enqueueSync = this.remoteSync.hasConfig();
+        const results = await this.db.deleteMany(
+          request.collection,
+          request.ids,
+          { enqueueSync },
+        );
+        for (const { doc } of results) {
+          this.registry.broadcastChange({
+            collection: request.collection,
+            type: 'delete',
+            doc: null,
+            id: doc.id,
+          });
+        }
+        if (enqueueSync && results.length > 0) {
+          await this.remoteSync.refreshPendingCount();
+          void this.remoteSync.syncNow();
+        }
+        return {
+          kind: 'response',
+          requestId,
+          ok: true,
+          data: results.map((r) => r.doc),
+        };
+      }
+
+      case 'clear': {
+        const enqueueSync = this.remoteSync.hasConfig();
+        const results = await this.db.clear(request.collection, {
+          enqueueSync,
+        });
+        for (const { doc } of results) {
+          this.registry.broadcastChange({
+            collection: request.collection,
+            type: 'delete',
+            doc: null,
+            id: doc.id,
+          });
+        }
+        if (enqueueSync && results.length > 0) {
+          await this.remoteSync.refreshPendingCount();
+          void this.remoteSync.syncNow();
+        }
+        return {
+          kind: 'response',
+          requestId,
+          ok: true,
+          data: results.map((r) => r.doc),
+        };
       }
 
       case 'subscribe': {

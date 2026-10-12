@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Sync scheduler: debounce after mutations, exponential backoff + jitter on failure, `SyncStatus.nextSyncAt`
+- `count(collection, opts?)` — count matching docs (index/range; soft-deleted excluded by default)
+- Bulk writes: `putMany`, `deleteMany`, and soft-delete `clear` on `DatabaseClient` (single IDB transaction per call)
 
 ## [0.1.1] - 2026-10-12
 
