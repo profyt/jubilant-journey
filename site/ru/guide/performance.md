@@ -1,23 +1,23 @@
 # Производительность
 
-Сравнимые цифры Chromium для документации и README — **не** soft-ceiling регрессионные сюиты (`test:perf` / `bench:e2e`).
+Ориентировочные цифры Chromium для документации и README — **не** регрессионные сюиты с soft-ceiling (`test:perf` / `bench:e2e`).
 
 ## Что измеряем
 
-Последовательные put/get + index query через `createDatabase` (`mode: 'shared'`) против тех же форм на **Dexie** (IndexedDB в main thread). Плюс число **cross-tab subscribe fan-out** для продукта SharedWorker (у Dexie в этом бенче нет эквивалентного пути).
+Последовательные put/get и index query через `createDatabase` (`mode: 'shared'`) против тех же операций на **Dexie** (IndexedDB в main thread). Плюс показатель **cross-tab subscribe fan-out** для сценария SharedWorker (у Dexie в этом бенче нет эквивалентного пути).
 
 ## Оговорки
 
-- Только одна машина / один прогон — абсолютные ops/s зависят от загрузки CPU; смотрите соотношения внутри одного прогона.
+- Одна машина и один прогон — абсолютные ops/s зависят от загрузки CPU; сравнивайте соотношения внутри одного прогона.
 - Dexie — честный baseline IndexedDB для **CRUD в одной вкладке**. Он **не** включает live sync через SharedWorker.
-- worker-sync-db платит за **RPC + SharedWorker** на каждой операции; это осознанно — цена консистентности между вкладками.
+- worker-sync-db платит за **RPC + SharedWorker** на каждой операции; это осознанная цена консистентности между вкладками.
 
 ## Актуальный marketing-сниппет
 
 Закоммиченные результаты `npm run bench:marketing` лежат в репозитории в [`docs/benchmarks/`](https://github.com/profyt/jubilant-journey/tree/main/docs/benchmarks).
 
-| Workload | worker-sync-db | Dexie (baseline) | Notes |
-|----------|----------------:|-----------------:|-------|
+| Нагрузка | worker-sync-db | Dexie (baseline) | Заметки |
+|----------|----------------:|-----------------:|---------|
 | Put throughput (200 sequential) | **2.69k ops/s** | **4.45k ops/s** | Same docs; WSD pays SharedWorker RPC |
 | Get throughput (200 sequential) | **8.44k ops/s** | **14.18k ops/s** | Key lookup |
 | Put latency p50 / p95 | 0.20 / 0.50 ms | 0.20 / 0.40 ms | Single-op samples (n=50) |

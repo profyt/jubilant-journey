@@ -17,12 +17,12 @@ const unsub = db.subscribe('todos', (event) => {
 });
 ```
 
-React: [`useQuery`](/ru/guide/react) подписывается за вас; [`useSubscribe`](/ru/guide/react) отдаёт сырой поток.
+React: [`useQuery`](/ru/guide/react) подписывается за вас; [`useSubscribe`](/ru/guide/react) отдаёт сырой поток событий.
 
 ## Требования
 
-| Requirement | Why |
-|-------------|-----|
+| Требование | Зачем |
+|------------|-------|
 | Один `dbName` | Scope SharedWorker + имя IndexedDB |
 | Одна `schema` | Иначе `SchemaMismatch` |
 | Один origin | Изоляция SharedWorker в браузере |
@@ -31,8 +31,8 @@ React: [`useQuery`](/ru/guide/react) подписывается за вас; [`u
 
 ## Поддержка браузеров
 
-- **SharedWorker** — Chromium и Firefox. Нужен для sync между вкладками.
-- **Safari / некоторые WebView** — без SharedWorker. При `mode: 'auto'` библиотека падает на dedicated worker (**без sync между вкладками**).
+- **SharedWorker** — Chromium и Firefox. Нужен для синхронизации между вкладками.
+- **Safari / некоторые WebView** — без SharedWorker. При `mode: 'auto'` библиотека переключается на dedicated worker (**без синхронизации между вкладками**).
 
 ```typescript
 const db = await createDatabase({

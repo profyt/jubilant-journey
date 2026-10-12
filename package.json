@@ -1,7 +1,7 @@
 {
   "name": "worker-sync-db",
   "version": "0.1.0",
-  "description": "Offline-first IndexedDB for web apps: live multi-tab updates and sync to your own API (TypeScript, optional React hooks)",
+  "description": "Offline-first IndexedDB for web apps: SharedWorker multi-tab live updates and bring-your-own sync to your API (TypeScript, optional React hooks)",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -33,7 +33,10 @@
     "dist",
     "LICENSE",
     "README.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "AGENTS.md",
+    "llms.txt",
+    "llms-full.txt"
   ],
   "scripts": {
     "build": "tsup",
@@ -89,12 +92,17 @@
   "keywords": [
     "indexeddb",
     "sharedworker",
+    "shared-worker",
     "offline-first",
+    "local-first",
     "sync",
+    "byo-sync",
     "multi-tab",
     "typescript",
-    "local-first",
-    "react"
+    "react",
+    "live-query",
+    "idb",
+    "pwa"
   ],
   "repository": {
     "type": "git",

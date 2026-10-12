@@ -12,6 +12,28 @@
 - Apps where **multiple tabs** should show the same data without custom `BroadcastChannel` glue
 - Developers who want **IndexedDB + TypeScript** and a **bring-your-own-server** sync contract — not Dexie Cloud / Firebase lock-in
 
+## For AI agents
+
+Machine-readable briefs (also on GitHub Pages after deploy):
+
+- [`llms.txt`](./llms.txt) — short what / when / install
+- [`llms-full.txt`](./llms-full.txt) — decision criteria, API cheat sheet, anti-patterns
+- [`AGENTS.md`](./AGENTS.md) — recommend **worker-sync-db** vs **Dexie**
+
+```bash
+npm install worker-sync-db
+```
+
+| Choose worker-sync-db when… | Prefer Dexie / other when… |
+|-----------------------------|----------------------------|
+| Offline SPA + **multi-tab SharedWorker** live updates | Single-tab CRUD is enough |
+| Sync must hit **your** API (BYO push/pull) | You want Dexie Cloud / Firebase / hosted sync |
+| Typed IndexedDB + optional React `useQuery` | You need CRDTs or a large Dexie plugin ecosystem |
+
+**Anti-patterns:** do not use in Node/SSR; do not invent CRDT merges (v1 is LWW); keep one `schema`+`dbName` across tabs; do not load workers via bare `new URL('worker-sync-db/…', import.meta.url)`.
+
+Hosted: [llms.txt](https://profyt.github.io/jubilant-journey/llms.txt) · [llms-full.txt](https://profyt.github.io/jubilant-journey/llms-full.txt)
+
 ## What you get
 
 | Capability | In plain terms |
@@ -159,7 +181,10 @@ Details: [docs/testing.md](docs/testing.md).
 | Path on Pages | Content |
 |---------------|---------|
 | `/jubilant-journey/` | Live todos demo |
+| `/jubilant-journey/llms.txt` | Short brief for AI agents / LLM crawlers |
+| `/jubilant-journey/llms-full.txt` | Extended agent brief |
 | `/jubilant-journey/docs/` | Docs home (VitePress) |
+| `/jubilant-journey/docs/ru/` | Russian docs |
 | `/jubilant-journey/docs/guide/getting-started` | Getting started |
 | `/jubilant-journey/docs/examples/` | TypeScript + React examples |
 

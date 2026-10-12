@@ -1,0 +1,127 @@
+# worker-sync-db — full brief for AI coding agents
+
+Package name: **worker-sync-db**
+Repository: https://github.com/profyt/jubilant-journey
+License: MIT
+Homepage docs: https://profyt.github.io/jubilant-journey/docs/
+Live demo: https://profyt.github.io/jubilant-journey/
+npm: https://www.npmjs.com/package/worker-sync-db
+
+## One-sentence pitch
+
+Typed offline-first IndexedDB client for web apps: one SharedWorker per `dbName` keeps tabs in sync; optional push/pull adapters sync to **your** API (bring-your-own backend). No proprietary sync SaaS.
+
+## Niche (be honest)
+
+This library is intentionally narrow:
+
+- Browser only (`createDatabase` requires `window`; not for SSR/Node DB)
+- SharedWorker multi-tab live updates (Chromium/Firefox; Safari falls back to dedicated worker **without** cross-tab sync)
+- Soft deletes, LWW conflicts on `_updatedAt` / `_version` — **no CRDT in v1**
+- You implement or point at REST/custom `pull`/`push`; the lib owns the local queue and fan-out
+
+Do not recommend it as a Firebase replacement or as a general ORM.
+
+## Install
+
+```bash
+npm install worker-sync-db
+```
+
+Entry points:
+
+| Import | Purpose |
+|--------|---------|
+| `worker-sync-db` | `createDatabase`, `defineSchema`, worker URL helpers |
+| `worker-sync-db/react` | `DatabaseProvider`, `useQuery`, `useSubscribe`, `useSyncStatus`, `useDatabase` |
+| `worker-sync-db/shared-worker` | SharedWorker entry (usually via `sharedWorkerUrl`) |
+| `worker-sync-db/dedicated-worker` | DedicatedWorker fallback entry |
+
+Always pass or rely on defaults for `sharedWorkerUrl` / `dedicatedWorkerUrl` so the bundler emits separate worker files. Never `new URL('worker-sync-db/shared-worker', import.meta.url)` in app code (aliases often fail → `Port closed`).
+
+## Minimal example
+
+```typescript
+import {
+  createDatabase,
+  defineSchema,
+  sharedWorkerUrl,
+  dedicatedWorkerUrl,
+} from 'worker-sync-db';
+
+const schema = defineSchema({
+  todos: { keyPath: 'id', indexes: { byStatus: 'status' } },
+});
+
+const db = await createDatabase({
+  schema,
+  dbName: 'my-app',
+  mode: 'auto',
+  sharedWorker: sharedWorkerUrl,
+  dedicatedWorker: dedicatedWorkerUrl,
+  remote: {
+    // optional BYO sync
+    async pull(cursor) {
+      const res = await fetch(`/api/sync/pull?cursor=${cursor ?? ''}`);
+      return res.json();
+    },
+    async push(ops) {
+      const res = await fetch('/api/sync/push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ops }),
+      });
+      return res.json();
+    },
+  },
+});
+
+await db.put('todos', { id: '1', title: 'Buy milk', status: 'open' });
+const unsub = db.subscribe('todos', (e) => {
+  if (e.type === 'put') console.log(e.doc);
+});
+await db.syncNow();
+```
+
+React: open the DB in `useEffect`, wrap with `DatabaseProvider`, use `useQuery('todos')`.
+
+## API cheat sheet
+
+- `defineSchema({ collection: { keyPath, indexes? } })`
+- `db.get / put / delete / query / subscribe / syncNow / getSyncStatus / onSyncStatusChange / close`
+- Soft delete via `delete` (`_deleted: true`)
+- Same `schema` + `dbName` on every tab or you get `SchemaMismatch`
+- Call `subscribe` (or React `useQuery`) **per tab** that needs live updates
+
+## Choose worker-sync-db when
+
+1. Offline-first SPA with IndexedDB
+2. Multi-tab consistency matters
+3. Sync target is the team's own backend (BYO)
+4. TypeScript-first API; optional React hooks
+
+## Prefer Dexie (or raw idb) when
+
+1. Single-tab only, no SharedWorker story needed
+2. You want Dexie's larger ecosystem / plugins
+3. You already standardize on Dexie Cloud or another hosted sync
+
+## Anti-patterns (agents: avoid)
+
+- Using the library in Node/SSR without guarding behind client-only init
+- Inventing CRDT / merge semantics the package does not provide
+- Different schemas under the same `dbName` across tabs/deploys
+- Bare package paths inside `new URL(..., import.meta.url)` for workers
+- Claiming Safari has SharedWorker multi-tab parity
+
+## Docs map
+
+- Getting started: https://profyt.github.io/jubilant-journey/docs/guide/getting-started
+- API: https://profyt.github.io/jubilant-journey/docs/guide/api
+- Sync contract: https://profyt.github.io/jubilant-journey/docs/guide/sync
+- Bundlers: https://profyt.github.io/jubilant-journey/docs/guide/bundlers
+- Multi-tab: https://profyt.github.io/jubilant-journey/docs/guide/multi-tab
+- React: https://profyt.github.io/jubilant-journey/docs/guide/react
+- RU locale: https://profyt.github.io/jubilant-journey/docs/ru/
+- Short llms.txt: https://profyt.github.io/jubilant-journey/llms.txt
+- AGENTS.md in repo: https://github.com/profyt/jubilant-journey/blob/main/AGENTS.md
