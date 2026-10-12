@@ -42,6 +42,14 @@ export function App() {
     base === '/' || base === './'
       ? 'https://profyt.github.io/jubilant-journey/docs/'
       : `${base}docs/`;
+  // Prefer Russian docs when the browser locale is Russian (VitePress: /ru/).
+  const docsLocale =
+    typeof navigator !== 'undefined' &&
+    /^ru\b/i.test(navigator.language || '')
+      ? 'ru/'
+      : '';
+  const docsHome = `${docsRoot}${docsLocale}`;
+  const docsExamples = `${docsRoot}${docsLocale}examples/typescript`;
 
   return (
     <div className="shell">
@@ -61,12 +69,12 @@ export function App() {
       </div>
 
       <nav className="site-nav" aria-label="Site">
-        <a className="site-nav__brand" href={docsRoot}>
+        <a className="site-nav__brand" href={docsHome}>
           worker-sync-db
         </a>
         <div className="site-nav__links">
-          <a href={docsRoot}>Docs</a>
-          <a href={`${docsRoot}examples/typescript`}>Examples</a>
+          <a href={docsHome}>Docs</a>
+          <a href={docsExamples}>Examples</a>
           <a href={import.meta.env.BASE_URL} aria-current="page">
             Demo
           </a>
@@ -91,7 +99,7 @@ export function App() {
           <a className="btn btn--primary" href="#playground">
             Try the playground
           </a>
-          <a className="btn btn--ghost" href={docsRoot}>
+          <a className="btn btn--ghost" href={docsHome}>
             Documentation
           </a>
           <a
