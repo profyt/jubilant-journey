@@ -57,6 +57,10 @@ export interface DatabaseClient<S extends CollectionSchema> {
     collection: C,
     opts?: QueryOptions,
   ): Promise<InferDoc<S, C>[]>;
+  count<C extends keyof S & string>(
+    collection: C,
+    opts?: Omit<QueryOptions, 'limit'>,
+  ): Promise<number>;
   subscribe<C extends keyof S & string>(
     collection: C,
     listener: (event: ChangeEvent<InferDoc<S, C>>) => void,
@@ -194,6 +198,16 @@ function createClientFromBridge<S extends CollectionSchema>(
         limit: opts.limit,
         includeDeleted: opts.includeDeleted,
       }) as Promise<InferDoc<S, typeof collection>[]>;
+    },
+
+    async count(collection, opts = {}) {
+      return bridge.call({
+        type: 'count',
+        collection,
+        index: opts.index,
+        range: opts.range,
+        includeDeleted: opts.includeDeleted,
+      }) as Promise<number>;
     },
 
     subscribe(collection, listener, filter) {

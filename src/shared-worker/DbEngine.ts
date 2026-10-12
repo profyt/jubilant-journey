@@ -135,6 +135,33 @@ export class DbEngine {
     return results;
   }
 
+  async count(options: {
+    collection: string;
+    index?: string;
+    range?: IDBKeyRangeInit;
+    includeDeleted?: boolean;
+  }): Promise<number> {
+    const db = this.requireDb();
+    const { collection, index, range, includeDeleted } = options;
+    const store = db.transaction(collection).store;
+    const source = index ? store.index(index) : store;
+    const keyRange = toIDBKeyRange(range);
+
+    // Native count includes soft-deleted rows; filter when exclude deleted.
+    if (includeDeleted) {
+      return source.count(keyRange);
+    }
+
+    let n = 0;
+    for await (const cursor of source.iterate(keyRange)) {
+      const doc = cursor.value as DocumentMeta & Record<string, unknown>;
+      if (!doc._deleted) {
+        n++;
+      }
+    }
+    return n;
+  }
+
   async put(
     collection: string,
     payload: Record<string, unknown> & { id: string },

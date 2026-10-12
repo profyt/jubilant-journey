@@ -37,6 +37,13 @@ export type WorkerRequest = {
       limit?: number;
       includeDeleted?: boolean;
     }
+  | {
+      type: 'count';
+      collection: string;
+      index?: string;
+      range?: IDBKeyRangeInit;
+      includeDeleted?: boolean;
+    }
   | { type: 'put'; collection: string; doc: Record<string, unknown> & { id: string } }
   | { type: 'delete'; collection: string; id: string }
   | { type: 'subscribe'; collection: string; filter?: QueryFilter }

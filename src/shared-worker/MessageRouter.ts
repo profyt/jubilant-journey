@@ -158,6 +158,16 @@ export class MessageRouter {
         return { kind: 'response', requestId, ok: true, data: docs };
       }
 
+      case 'count': {
+        const n = await this.db.count({
+          collection: request.collection,
+          index: request.index,
+          range: request.range,
+          includeDeleted: request.includeDeleted,
+        });
+        return { kind: 'response', requestId, ok: true, data: n };
+      }
+
       case 'put': {
         const enqueueSync = this.remoteSync.hasConfig();
         const { doc } = await this.db.put(request.collection, request.doc, {

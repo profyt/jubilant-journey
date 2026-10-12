@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `count(collection, opts?)` — count matching docs (index/range; soft-deleted excluded by default)
+
 ## [0.1.1] - 2026-10-12
 
 ### Added
