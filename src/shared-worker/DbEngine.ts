@@ -4,6 +4,7 @@ import type { DocumentMeta } from '../shared/meta.js';
 import { withMeta, withSoftDelete } from '../shared/meta.js';
 import {
   computeSchemaVersion,
+  schemasEqual,
   toIDBKeyRange,
   type CollectionSchema,
   type IDBKeyRangeInit,
@@ -27,9 +28,21 @@ export class DbEngine {
   private dbName: string | null = null;
 
   async init(dbName: string, schema: CollectionSchema): Promise<void> {
-    if (this.db && this.dbName === dbName && this.schema) {
+    if (
+      this.db &&
+      this.dbName === dbName &&
+      this.schema &&
+      schemasEqual(this.schema, schema)
+    ) {
       return;
     }
+
+    // Re-open when schema evolves (IDB version is derived from schema hash).
+    if (this.db) {
+      this.db.close();
+      this.db = null;
+    }
+
     this.dbName = dbName;
     this.schema = schema;
     const version = computeSchemaVersion(schema);
@@ -79,6 +92,13 @@ export class DbEngine {
         }
       },
     })) as AppDB;
+
+    // Persist schema snapshot for diagnostics / future workers.
+    await this.db.put(META_STORE, {
+      key: 'schema',
+      value: schema,
+      schemaVersion: version,
+    });
   }
 
   getSchema(): CollectionSchema | null {
