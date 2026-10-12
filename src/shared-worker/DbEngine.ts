@@ -235,6 +235,137 @@ export class DbEngine {
     return { doc, op };
   }
 
+  /**
+   * Upsert many docs in one IDB transaction. Returns results in input order.
+   */
+  async putMany(
+    collection: string,
+    payloads: Array<Record<string, unknown> & { id: string }>,
+    options: WriteOptions = {},
+  ): Promise<
+    Array<{
+      doc: DocumentMeta & Record<string, unknown>;
+      op: PendingOp | null;
+    }>
+  > {
+    if (payloads.length === 0) {
+      return [];
+    }
+    const enqueueSync = options.enqueueSync !== false;
+    const db = this.requireDb();
+    const storeNames = enqueueSync
+      ? [collection, SYNC_QUEUE_STORE]
+      : [collection];
+    const tx = db.transaction(storeNames, 'readwrite');
+    const store = tx.objectStore(collection);
+    const queue = enqueueSync ? tx.objectStore(SYNC_QUEUE_STORE) : null;
+    const results: Array<{
+      doc: DocumentMeta & Record<string, unknown>;
+      op: PendingOp | null;
+    }> = [];
+
+    for (const payload of payloads) {
+      const existing = (await store.get(payload.id)) as
+        | (DocumentMeta & Record<string, unknown>)
+        | undefined;
+      const doc = withMeta(payload.id, payload, existing ?? null);
+      const op: PendingOp | null =
+        enqueueSync && queue
+          ? {
+              opId: crypto.randomUUID(),
+              collection,
+              doc,
+              kind: 'put',
+            }
+          : null;
+      await store.put(doc);
+      if (op && queue) {
+        await queue.put(op);
+      }
+      results.push({ doc, op });
+    }
+
+    await tx.done;
+    return results;
+  }
+
+  /**
+   * Soft-delete many ids in one transaction. Missing ids are skipped.
+   */
+  async deleteMany(
+    collection: string,
+    ids: string[],
+    options: WriteOptions = {},
+  ): Promise<
+    Array<{
+      doc: DocumentMeta & Record<string, unknown>;
+      op: PendingOp | null;
+    }>
+  > {
+    if (ids.length === 0) {
+      return [];
+    }
+    const enqueueSync = options.enqueueSync !== false;
+    const db = this.requireDb();
+    const storeNames = enqueueSync
+      ? [collection, SYNC_QUEUE_STORE]
+      : [collection];
+    const tx = db.transaction(storeNames, 'readwrite');
+    const store = tx.objectStore(collection);
+    const queue = enqueueSync ? tx.objectStore(SYNC_QUEUE_STORE) : null;
+    const results: Array<{
+      doc: DocumentMeta & Record<string, unknown>;
+      op: PendingOp | null;
+    }> = [];
+
+    for (const id of ids) {
+      const existing = (await store.get(id)) as
+        | (DocumentMeta & Record<string, unknown>)
+        | undefined;
+      if (!existing || existing._deleted) {
+        continue;
+      }
+      const doc = withSoftDelete(existing);
+      const op: PendingOp | null =
+        enqueueSync && queue
+          ? {
+              opId: crypto.randomUUID(),
+              collection,
+              doc,
+              kind: 'delete',
+            }
+          : null;
+      await store.put(doc);
+      if (op && queue) {
+        await queue.put(op);
+      }
+      results.push({ doc, op });
+    }
+
+    await tx.done;
+    return results;
+  }
+
+  /**
+   * Soft-delete every non-deleted document in the collection (one transaction).
+   */
+  async clear(
+    collection: string,
+    options: WriteOptions = {},
+  ): Promise<
+    Array<{
+      doc: DocumentMeta & Record<string, unknown>;
+      op: PendingOp | null;
+    }>
+  > {
+    const db = this.requireDb();
+    const all = (await db.getAll(collection)) as Array<
+      DocumentMeta & Record<string, unknown>
+    >;
+    const ids = all.filter((d) => !d._deleted).map((d) => d.id);
+    return this.deleteMany(collection, ids, options);
+  }
+
   async getPendingOps(): Promise<PendingOp[]> {
     const db = this.requireDb();
     return (await db.getAll(SYNC_QUEUE_STORE)) as PendingOp[];

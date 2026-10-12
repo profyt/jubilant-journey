@@ -207,6 +207,85 @@ export class MessageRouter {
         return { kind: 'response', requestId, ok: true, data: result.doc };
       }
 
+      case 'putMany': {
+        const enqueueSync = this.remoteSync.hasConfig();
+        const results = await this.db.putMany(
+          request.collection,
+          request.docs,
+          { enqueueSync },
+        );
+        for (const { doc } of results) {
+          this.registry.broadcastChange({
+            collection: request.collection,
+            type: 'put',
+            doc,
+            id: doc.id,
+          });
+        }
+        if (enqueueSync && results.length > 0) {
+          await this.remoteSync.refreshPendingCount();
+          void this.remoteSync.syncNow();
+        }
+        return {
+          kind: 'response',
+          requestId,
+          ok: true,
+          data: results.map((r) => r.doc),
+        };
+      }
+
+      case 'deleteMany': {
+        const enqueueSync = this.remoteSync.hasConfig();
+        const results = await this.db.deleteMany(
+          request.collection,
+          request.ids,
+          { enqueueSync },
+        );
+        for (const { doc } of results) {
+          this.registry.broadcastChange({
+            collection: request.collection,
+            type: 'delete',
+            doc: null,
+            id: doc.id,
+          });
+        }
+        if (enqueueSync && results.length > 0) {
+          await this.remoteSync.refreshPendingCount();
+          void this.remoteSync.syncNow();
+        }
+        return {
+          kind: 'response',
+          requestId,
+          ok: true,
+          data: results.map((r) => r.doc),
+        };
+      }
+
+      case 'clear': {
+        const enqueueSync = this.remoteSync.hasConfig();
+        const results = await this.db.clear(request.collection, {
+          enqueueSync,
+        });
+        for (const { doc } of results) {
+          this.registry.broadcastChange({
+            collection: request.collection,
+            type: 'delete',
+            doc: null,
+            id: doc.id,
+          });
+        }
+        if (enqueueSync && results.length > 0) {
+          await this.remoteSync.refreshPendingCount();
+          void this.remoteSync.syncNow();
+        }
+        return {
+          kind: 'response',
+          requestId,
+          ok: true,
+          data: results.map((r) => r.doc),
+        };
+      }
+
       case 'subscribe': {
         this.registry.subscribe(clientId, request.collection, request.filter);
         return { kind: 'response', requestId, ok: true, data: null };
