@@ -74,6 +74,44 @@ describe('MessageRouter', () => {
 
     expect(await db.getPendingOps()).toHaveLength(1);
   });
+
+  it('handles putMany and clear', async () => {
+    const channel = new MessageChannel();
+    const db = new DbEngine();
+    const registry = new ClientRegistry();
+    const remoteSync = new RemoteSync(db, registry);
+    const router = new MessageRouter(db, registry, remoteSync);
+    router.attach(channel.port1);
+
+    await sendRequest(channel.port2, {
+      type: 'connect',
+      dbName: `router-bulk-${Math.random()}`,
+      schema,
+      syncCapable: false,
+    });
+
+    const docs = await sendRequest(channel.port2, {
+      type: 'putMany',
+      collection: 'todos',
+      docs: [
+        { id: '1', title: 'One' },
+        { id: '2', title: 'Two' },
+      ],
+    });
+    expect(docs).toHaveLength(2);
+
+    const cleared = await sendRequest(channel.port2, {
+      type: 'clear',
+      collection: 'todos',
+    });
+    expect(cleared).toHaveLength(2);
+
+    const remaining = await sendRequest(channel.port2, {
+      type: 'query',
+      collection: 'todos',
+    });
+    expect(remaining).toHaveLength(0);
+  });
 });
 
 function sendRequest(

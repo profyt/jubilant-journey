@@ -37,8 +37,22 @@ export type WorkerRequest = {
       limit?: number;
       includeDeleted?: boolean;
     }
+  | {
+      type: 'count';
+      collection: string;
+      index?: string;
+      range?: IDBKeyRangeInit;
+      includeDeleted?: boolean;
+    }
   | { type: 'put'; collection: string; doc: Record<string, unknown> & { id: string } }
   | { type: 'delete'; collection: string; id: string }
+  | {
+      type: 'putMany';
+      collection: string;
+      docs: Array<Record<string, unknown> & { id: string }>;
+    }
+  | { type: 'deleteMany'; collection: string; ids: string[] }
+  | { type: 'clear'; collection: string }
   | { type: 'subscribe'; collection: string; filter?: QueryFilter }
   | { type: 'unsubscribe'; collection: string }
   | { type: 'syncNow' }

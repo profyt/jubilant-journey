@@ -4,6 +4,7 @@ import type { DocumentMeta } from '../shared/meta.js';
 import { withMeta, withSoftDelete } from '../shared/meta.js';
 import {
   computeSchemaVersion,
+  schemasEqual,
   toIDBKeyRange,
   type CollectionSchema,
   type IDBKeyRangeInit,
@@ -27,9 +28,21 @@ export class DbEngine {
   private dbName: string | null = null;
 
   async init(dbName: string, schema: CollectionSchema): Promise<void> {
-    if (this.db && this.dbName === dbName && this.schema) {
+    if (
+      this.db &&
+      this.dbName === dbName &&
+      this.schema &&
+      schemasEqual(this.schema, schema)
+    ) {
       return;
     }
+
+    // Re-open when schema evolves (IDB version is derived from schema hash).
+    if (this.db) {
+      this.db.close();
+      this.db = null;
+    }
+
     this.dbName = dbName;
     this.schema = schema;
     const version = computeSchemaVersion(schema);
@@ -79,6 +92,13 @@ export class DbEngine {
         }
       },
     })) as AppDB;
+
+    // Persist schema snapshot for diagnostics / future workers.
+    await this.db.put(META_STORE, {
+      key: 'schema',
+      value: schema,
+      schemaVersion: version,
+    });
   }
 
   getSchema(): CollectionSchema | null {
@@ -133,6 +153,33 @@ export class DbEngine {
       }
     }
     return results;
+  }
+
+  async count(options: {
+    collection: string;
+    index?: string;
+    range?: IDBKeyRangeInit;
+    includeDeleted?: boolean;
+  }): Promise<number> {
+    const db = this.requireDb();
+    const { collection, index, range, includeDeleted } = options;
+    const store = db.transaction(collection).store;
+    const source = index ? store.index(index) : store;
+    const keyRange = toIDBKeyRange(range);
+
+    // Native count includes soft-deleted rows; filter when exclude deleted.
+    if (includeDeleted) {
+      return source.count(keyRange);
+    }
+
+    let n = 0;
+    for await (const cursor of source.iterate(keyRange)) {
+      const doc = cursor.value as DocumentMeta & Record<string, unknown>;
+      if (!doc._deleted) {
+        n++;
+      }
+    }
+    return n;
   }
 
   async put(
@@ -206,6 +253,137 @@ export class DbEngine {
     }
 
     return { doc, op };
+  }
+
+  /**
+   * Upsert many docs in one IDB transaction. Returns results in input order.
+   */
+  async putMany(
+    collection: string,
+    payloads: Array<Record<string, unknown> & { id: string }>,
+    options: WriteOptions = {},
+  ): Promise<
+    Array<{
+      doc: DocumentMeta & Record<string, unknown>;
+      op: PendingOp | null;
+    }>
+  > {
+    if (payloads.length === 0) {
+      return [];
+    }
+    const enqueueSync = options.enqueueSync !== false;
+    const db = this.requireDb();
+    const storeNames = enqueueSync
+      ? [collection, SYNC_QUEUE_STORE]
+      : [collection];
+    const tx = db.transaction(storeNames, 'readwrite');
+    const store = tx.objectStore(collection);
+    const queue = enqueueSync ? tx.objectStore(SYNC_QUEUE_STORE) : null;
+    const results: Array<{
+      doc: DocumentMeta & Record<string, unknown>;
+      op: PendingOp | null;
+    }> = [];
+
+    for (const payload of payloads) {
+      const existing = (await store.get(payload.id)) as
+        | (DocumentMeta & Record<string, unknown>)
+        | undefined;
+      const doc = withMeta(payload.id, payload, existing ?? null);
+      const op: PendingOp | null =
+        enqueueSync && queue
+          ? {
+              opId: crypto.randomUUID(),
+              collection,
+              doc,
+              kind: 'put',
+            }
+          : null;
+      await store.put(doc);
+      if (op && queue) {
+        await queue.put(op);
+      }
+      results.push({ doc, op });
+    }
+
+    await tx.done;
+    return results;
+  }
+
+  /**
+   * Soft-delete many ids in one transaction. Missing ids are skipped.
+   */
+  async deleteMany(
+    collection: string,
+    ids: string[],
+    options: WriteOptions = {},
+  ): Promise<
+    Array<{
+      doc: DocumentMeta & Record<string, unknown>;
+      op: PendingOp | null;
+    }>
+  > {
+    if (ids.length === 0) {
+      return [];
+    }
+    const enqueueSync = options.enqueueSync !== false;
+    const db = this.requireDb();
+    const storeNames = enqueueSync
+      ? [collection, SYNC_QUEUE_STORE]
+      : [collection];
+    const tx = db.transaction(storeNames, 'readwrite');
+    const store = tx.objectStore(collection);
+    const queue = enqueueSync ? tx.objectStore(SYNC_QUEUE_STORE) : null;
+    const results: Array<{
+      doc: DocumentMeta & Record<string, unknown>;
+      op: PendingOp | null;
+    }> = [];
+
+    for (const id of ids) {
+      const existing = (await store.get(id)) as
+        | (DocumentMeta & Record<string, unknown>)
+        | undefined;
+      if (!existing || existing._deleted) {
+        continue;
+      }
+      const doc = withSoftDelete(existing);
+      const op: PendingOp | null =
+        enqueueSync && queue
+          ? {
+              opId: crypto.randomUUID(),
+              collection,
+              doc,
+              kind: 'delete',
+            }
+          : null;
+      await store.put(doc);
+      if (op && queue) {
+        await queue.put(op);
+      }
+      results.push({ doc, op });
+    }
+
+    await tx.done;
+    return results;
+  }
+
+  /**
+   * Soft-delete every non-deleted document in the collection (one transaction).
+   */
+  async clear(
+    collection: string,
+    options: WriteOptions = {},
+  ): Promise<
+    Array<{
+      doc: DocumentMeta & Record<string, unknown>;
+      op: PendingOp | null;
+    }>
+  > {
+    const db = this.requireDb();
+    const all = (await db.getAll(collection)) as Array<
+      DocumentMeta & Record<string, unknown>
+    >;
+    const ids = all.filter((d) => !d._deleted).map((d) => d.id);
+    return this.deleteMany(collection, ids, options);
   }
 
   async getPendingOps(): Promise<PendingOp[]> {
