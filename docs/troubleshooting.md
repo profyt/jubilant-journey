@@ -19,20 +19,29 @@
 3. Same `dbName` and origin.
 4. SharedWorker still running (DevTools → Application → Shared workers).
 
-## `SharedWorker is not supported`
+## `SharedWorker is not supported` (Safari / WebViews)
 
-Some WebViews and older browsers lack SharedWorker.
+Some WebViews and Safari environments lack SharedWorker. With `mode: 'auto'`, the client falls back to a **dedicated** worker.
 
 ```typescript
 const db = await createDatabase({
   schema,
   dbName: 'my-app',
-  mode: 'auto', // falls back to dedicated
-  dedicatedWorker: new URL('worker-sync-db/dedicated-worker', import.meta.url),
+  mode: 'auto', // → dedicated when SharedWorker is missing
+  // crossTabFallback: 'auto', // default — BroadcastChannel relay in dedicated mode
 });
+
+db.getWorkerMode(); // 'shared' | 'dedicated'
+db.getCrossTabTransport(); // 'shared-worker' | 'broadcast-channel' | 'none'
 ```
 
-Dedicated mode: **no cross-tab sync**.
+| Transport | Meaning |
+|-----------|---------|
+| `shared-worker` | True multi-tab fan-out via SharedWorker |
+| `broadcast-channel` | Dedicated worker + `BroadcastChannel` change relay (Safari-friendly) |
+| `none` | No cross-tab live updates (`crossTabFallback: 'none'`) |
+
+Sync **leadership** still lives in the worker process — BroadcastChannel only relays `subscribe` change events, not a shared sync queue across tabs.
 
 ## `Port closed` or worker failed to load
 
