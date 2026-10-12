@@ -159,22 +159,33 @@ code {
   color: var(--amber);
 }
 
-.hero {
+.stage {
   position: relative;
   z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  align-items: center;
   min-height: calc(100vh - 3.25rem);
+  padding: clamp(1.5rem, 4vw, 3rem) clamp(1.25rem, 4vw, 2.5rem);
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.hero {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: clamp(2rem, 6vw, 5rem);
-  max-width: 920px;
+  min-width: 0;
+  padding: 0;
+  max-width: none;
 }
 
 .hero__brand {
-  margin: 0 0 1.25rem;
+  margin: 0 0 1rem;
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: clamp(2.6rem, 8vw, 5.2rem);
+  font-size: clamp(2.4rem, 6vw, 4.4rem);
   letter-spacing: -0.04em;
   line-height: 0.95;
   color: var(--mist);
@@ -182,20 +193,20 @@ code {
 }
 
 .hero__headline {
-  margin: 0 0 1rem;
+  margin: 0 0 0.85rem;
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: clamp(1.45rem, 3.4vw, 2.15rem);
+  font-size: clamp(1.3rem, 2.6vw, 1.85rem);
   letter-spacing: -0.02em;
-  max-width: 16ch;
+  max-width: 18ch;
   animation: rise-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
 }
 
 .hero__lede {
-  margin: 0 0 1.75rem;
-  max-width: 38ch;
+  margin: 0 0 1.5rem;
+  max-width: 36ch;
   color: var(--mist-dim);
-  font-size: 1.05rem;
+  font-size: 1.02rem;
   animation: rise-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.16s both;
 }
 
@@ -207,7 +218,7 @@ code {
 }
 
 .hero__hint {
-  margin: 1.5rem 0 0;
+  margin: 1.25rem 0 0;
   color: rgba(232, 241, 242, 0.55);
   font-size: 0.92rem;
   animation: rise-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.32s both;
@@ -258,21 +269,43 @@ code {
 .playground {
   position: relative;
   z-index: 1;
-  margin: 0 auto;
-  padding: 0 clamp(1.25rem, 4vw, 2.5rem) 4rem;
-  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  max-width: none;
+  min-width: 0;
+  max-height: min(78vh, 720px);
+  overflow: hidden;
+  animation: rise-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+}
+
+.playground__chrome {
+  position: relative;
+  z-index: 2;
+  flex: 0 0 auto;
+  background: #052428;
+  box-shadow: 0 10px 18px -12px rgba(0, 0, 0, 0.65);
+}
+
+.playground__list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
 }
 
 .playground__head h2 {
   margin: 0 0 0.5rem;
   font-family: var(--font-display);
-  font-size: 1.75rem;
+  font-size: 1.65rem;
   letter-spacing: -0.02em;
 }
 
 .playground__head p {
-  margin: 0 0 1.5rem;
+  margin: 0 0 1.25rem;
   color: var(--mist-dim);
+  font-size: 0.95rem;
 }
 
 .status {
@@ -410,6 +443,147 @@ code {
   padding: 1rem 0 2rem;
 }
 
+.swarm {
+  position: relative;
+  z-index: 1;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 1rem clamp(1.25rem, 4vw, 2.5rem) 3.5rem;
+}
+
+.swarm__intro {
+  max-width: 54ch;
+  margin-bottom: 1.5rem;
+}
+
+.swarm__intro h2 {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+  letter-spacing: -0.02em;
+}
+
+.swarm__intro p {
+  margin: 0;
+  color: var(--mist-dim);
+}
+
+.swarm__meter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem 1.5rem;
+  padding: 1rem 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 1rem;
+}
+
+.swarm__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 5.5rem;
+}
+
+.swarm__stat-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(232, 241, 242, 0.5);
+}
+
+.swarm__stat-value {
+  font-family: var(--font-display);
+  font-size: 1.65rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.swarm__agents {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-left: auto;
+}
+
+.swarm__agent {
+  --agent: var(--mist);
+  padding: 0.25rem 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--agent) 45%, transparent);
+  color: var(--agent);
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: background 200ms ease, color 200ms ease, transform 200ms ease;
+}
+
+.swarm__agent--remote {
+  --agent: #5ec8ff;
+  color: #9fdcff;
+}
+
+.swarm__agent.is-hot {
+  background: color-mix(in srgb, var(--agent) 22%, transparent);
+  transform: translateY(-1px);
+  animation: agent-glow 0.7s ease;
+}
+
+.swarm__pulse {
+  margin: 0.85rem 0 1rem;
+  color: var(--amber);
+  font-size: 0.95rem;
+  animation: rise-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.swarm__feed {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.swarm__row {
+  display: grid;
+  grid-template-columns: 6.5rem 4.5rem minmax(0, 1fr);
+  gap: 0.75rem 1rem;
+  align-items: baseline;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.92rem;
+  animation: feed-slide 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.swarm__row time {
+  color: rgba(232, 241, 242, 0.45);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+}
+
+.swarm__row-agent {
+  font-weight: 600;
+  color: var(--mist);
+}
+
+.swarm__row-msg {
+  color: var(--mist-dim);
+  min-width: 0;
+}
+
+.swarm__row--remote_pull .swarm__row-agent,
+.swarm__row--sync .swarm__row-agent {
+  color: #9fdcff;
+}
+
+.swarm__row--agent_write .swarm__row-agent,
+.swarm__row--agent_toggle .swarm__row-agent {
+  color: #7dd3c0;
+}
+
+.swarm__feed-empty {
+  padding: 1rem 0;
+  color: var(--mist-dim);
+}
+
 .footer {
   position: relative;
   z-index: 1;
@@ -446,6 +620,26 @@ code {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes feed-slide {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes agent-glow {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--agent) 40%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 10px transparent;
   }
 }
 
@@ -493,12 +687,39 @@ code {
   }
 }
 
-@media (max-width: 560px) {
-  .status__dot + span + span {
+@media (max-width: 900px) {
+  .stage {
+    grid-template-columns: 1fr;
+    min-height: auto;
+    align-items: start;
+    padding-top: clamp(1.75rem, 5vw, 2.5rem);
+  }
+
+  .playground {
+    max-height: none;
+  }
+
+  .hero__brand {
+    font-size: clamp(2.4rem, 12vw, 3.6rem);
+  }
+}
+
+@media (max-width: 640px) {
+  .swarm__row {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+
+  .swarm__agents {
+    margin-left: 0;
     width: 100%;
   }
 
   .btn--small {
     margin-left: 0;
+  }
+
+  .status__dot + span + span {
+    width: 100%;
   }
 }

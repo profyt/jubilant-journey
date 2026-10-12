@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import './App.css';
 import { useDatabase } from './db/DatabaseProvider.js';
+import { AGENTS, useLiveAgents } from './db/useLiveAgents.js';
 import { useTodos } from './db/useTodos.js';
 import type { TodoStatus } from './db/schema.js';
 
@@ -13,6 +14,7 @@ export function App() {
   const [pulse, setPulse] = useState(false);
   const { todos, loading, addTodo, toggleTodo, removeTodo, syncNow } =
     useTodos(filter);
+  const live = useLiveAgents();
 
   useEffect(() => {
     if (!syncStatus) return;
@@ -63,7 +65,12 @@ export function App() {
             d="M120 200 C260 80, 540 320, 680 200"
           />
           <circle className="atmosphere__node" cx="120" cy="200" r="8" />
-          <circle className="atmosphere__node atmosphere__node--delay" cx="400" cy="200" r="10" />
+          <circle
+            className="atmosphere__node atmosphere__node--delay"
+            cx="400"
+            cy="200"
+            r="10"
+          />
           <circle className="atmosphere__node" cx="680" cy="200" r="8" />
         </svg>
       </div>
@@ -88,139 +95,232 @@ export function App() {
         </div>
       </nav>
 
-      <header className="hero">
-        <p className="hero__brand">worker-sync-db</p>
-        <h1 className="hero__headline">One database. Every tab. Offline-first.</h1>
-        <p className="hero__lede">
-          A small todos app powered by worker-sync-db: edits save instantly,
-          every open tab stays in sync, and you can push changes to a mock server.
-        </p>
-        <div className="hero__cta">
-          <a className="btn btn--primary" href="#playground">
-            Try the playground
-          </a>
-          <a className="btn btn--ghost" href={docsHome}>
-            Documentation
-          </a>
-          <a
-            className="btn btn--ghost"
-            href="https://github.com/profyt/jubilant-journey"
-            target="_blank"
-            rel="noreferrer"
-          >
-            GitHub
-          </a>
-        </div>
-        <p className="hero__hint">
-          Tip: open this URL in a second tab — adds and toggles mirror instantly.
-        </p>
-      </header>
+      <div className="stage">
+        <header className="hero">
+          <p className="hero__brand">worker-sync-db</p>
+          <h1 className="hero__headline">One database. Every tab. Offline-first.</h1>
+          <p className="hero__lede">
+            Edits save in a SharedWorker, every open tab stays in sync, and a mock
+            remote adapter shows push/pull without leaving the page.
+          </p>
+          <div className="hero__cta">
+            <a className="btn btn--primary" href="#swarm">
+              Watch live agents
+            </a>
+            <a className="btn btn--ghost" href={docsHome}>
+              Documentation
+            </a>
+            <a
+              className="btn btn--ghost"
+              href="https://github.com/profyt/jubilant-journey"
+              target="_blank"
+              rel="noreferrer"
+            >
+              GitHub
+            </a>
+          </div>
+          <p className="hero__hint">
+            Tip: open this URL in a second tab — adds and toggles mirror instantly.
+          </p>
+        </header>
 
-      <main id="playground" className="playground">
-        <div className="playground__head">
-          <h2>Live todos</h2>
+        <main id="playground" className="playground">
+          <div className="playground__chrome">
+            <div className="playground__head">
+              <h2>Live todos</h2>
+              <p>
+                Add or complete tasks — they persist offline. Agents below also write
+                here through the same worker DB.
+              </p>
+            </div>
+
+            <div className={`status ${pulse ? 'status--pulse' : ''}`}>
+              <span
+                className={`status__dot ${syncStatus?.online === false ? 'is-offline' : ''}`}
+                title={syncStatus?.online === false ? 'Offline' : 'Online'}
+              />
+              <span>Pending: {syncStatus?.pending ?? '—'}</span>
+              {syncStatus?.lastSyncAt ? (
+                <span>
+                  Last sync: {new Date(syncStatus.lastSyncAt).toLocaleTimeString()}
+                </span>
+              ) : (
+                <span>Not synced yet</span>
+              )}
+              {syncStatus?.lastError && (
+                <span className="status__error">{syncStatus.lastError}</span>
+              )}
+              <button
+                type="button"
+                className="btn btn--small"
+                onClick={() => void syncNow()}
+              >
+                Sync now
+              </button>
+            </div>
+
+            <form
+              className="composer"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void addTodo(title).then(() => setTitle(''));
+              }}
+            >
+              <input
+                type="text"
+                placeholder="What should stay in sync?"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                disabled={loading && todos.length === 0}
+                aria-label="New todo title"
+              />
+              <button
+                type="submit"
+                className="btn btn--primary"
+                disabled={!title.trim()}
+              >
+                Add
+              </button>
+            </form>
+
+            <div className="filters" role="tablist" aria-label="Filter todos">
+              {(['all', 'open', 'done'] as const).map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  role="tab"
+                  aria-selected={filter === f}
+                  className={filter === f ? 'is-active' : ''}
+                  onClick={() => setFilter(f)}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="playground__list">
+            {loading && todos.length === 0 ? (
+              <p className="empty">Loading…</p>
+            ) : todos.length === 0 ? (
+              <p className="empty">
+                No todos yet — add one, or let agents start writing.
+              </p>
+            ) : (
+              <ul className="todo-list">
+                {todos.map((todo, index) => (
+                  <li
+                    key={todo.id}
+                    className={todo.status === 'done' ? 'is-done' : ''}
+                    style={{ animationDelay: `${Math.min(index, 12) * 40}ms` }}
+                  >
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={todo.status === 'done'}
+                        onChange={() => void toggleTodo(todo)}
+                      />
+                      <span>{todo.title}</span>
+                    </label>
+                    <button
+                      type="button"
+                      className="todo-list__remove"
+                      onClick={() => void removeTodo(todo.id)}
+                      aria-label={`Delete ${todo.title}`}
+                    >
+                      Remove
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </main>
+      </div>
+
+      <section id="swarm" className="swarm" aria-labelledby="swarm-title">
+        <div className="swarm__intro">
+          <h2 id="swarm-title">Sync swarm</h2>
           <p>
-            Add or complete tasks — they persist offline. Open a second tab to see
-            the same list update. Use Sync now to simulate sending data to your backend.
+            Simulated peers write through the real SharedWorker database, flush the
+            mock remote on a timer, and pull seeded server changes — watch the
+            activity stream move without clicking.
           </p>
         </div>
 
-        <div className={`status ${pulse ? 'status--pulse' : ''}`}>
-          <span
-            className={`status__dot ${syncStatus?.online === false ? 'is-offline' : ''}`}
-            title={syncStatus?.online === false ? 'Offline' : 'Online'}
-          />
-          <span>Pending: {syncStatus?.pending ?? '—'}</span>
-          {syncStatus?.lastSyncAt ? (
-            <span>
-              Last sync: {new Date(syncStatus.lastSyncAt).toLocaleTimeString()}
+        <div className="swarm__meter" aria-live="polite">
+          <div className="swarm__stat">
+            <span className="swarm__stat-label">Live events</span>
+            <span className="swarm__stat-value">{live.eventCount}</span>
+          </div>
+          <div className="swarm__stat">
+            <span className="swarm__stat-label">Open todos</span>
+            <span className="swarm__stat-value">{live.openCount}</span>
+          </div>
+          <div className="swarm__stat">
+            <span className="swarm__stat-label">Pending sync</span>
+            <span className="swarm__stat-value">
+              {live.syncStatus?.pending ?? '—'}
             </span>
-          ) : (
-            <span>Not synced yet</span>
-          )}
-          {syncStatus?.lastError && (
-            <span className="status__error">{syncStatus.lastError}</span>
-          )}
+          </div>
+          <div className="swarm__agents" aria-label="Agents">
+            {AGENTS.map((agent) => (
+              <span
+                key={agent.id}
+                className={`swarm__agent ${live.activeAgent === agent.name ? 'is-hot' : ''}`}
+                style={{ '--agent': agent.hue } as CSSProperties}
+              >
+                {agent.name}
+              </span>
+            ))}
+            <span
+              className={`swarm__agent swarm__agent--remote ${live.activeAgent === 'Orbit' ? 'is-hot' : ''}`}
+            >
+              Orbit
+            </span>
+          </div>
           <button
             type="button"
-            className="btn btn--small"
-            onClick={() => void syncNow()}
+            className="btn btn--ghost btn--small"
+            onClick={() => live.setRunning((v) => !v)}
           >
-            Sync now
+            {live.running ? 'Pause swarm' : 'Resume swarm'}
           </button>
         </div>
 
-        <form
-          className="composer"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void addTodo(title).then(() => setTitle(''));
-          }}
-        >
-          <input
-            type="text"
-            placeholder="What should stay in sync?"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            disabled={loading && todos.length === 0}
-            aria-label="New todo title"
-          />
-          <button type="submit" className="btn btn--primary" disabled={!title.trim()}>
-            Add
-          </button>
-        </form>
-
-        <div className="filters" role="tablist" aria-label="Filter todos">
-          {(['all', 'open', 'done'] as const).map((f) => (
-            <button
-              key={f}
-              type="button"
-              role="tab"
-              aria-selected={filter === f}
-              className={filter === f ? 'is-active' : ''}
-              onClick={() => setFilter(f)}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
-
-        {loading && todos.length === 0 ? (
-          <p className="empty">Loading…</p>
-        ) : todos.length === 0 ? (
-          <p className="empty">No todos yet — add one, then open a second tab.</p>
-        ) : (
-          <ul className="todo-list">
-            {todos.map((todo, index) => (
-              <li
-                key={todo.id}
-                className={todo.status === 'done' ? 'is-done' : ''}
-                style={{ animationDelay: `${index * 40}ms` }}
-              >
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={todo.status === 'done'}
-                    onChange={() => void toggleTodo(todo)}
-                  />
-                  <span>{todo.title}</span>
-                </label>
-                <button
-                  type="button"
-                  className="todo-list__remove"
-                  onClick={() => void removeTodo(todo.id)}
-                  aria-label={`Delete ${todo.title}`}
-                >
-                  Remove
-                </button>
-              </li>
-            ))}
-          </ul>
+        {live.lastPulse && (
+          <p className="swarm__pulse" key={live.lastPulse + live.eventCount}>
+            {live.lastPulse}
+          </p>
         )}
-      </main>
+
+        <ol className="swarm__feed">
+          {live.activityLoading && live.activities.length === 0 ? (
+            <li className="swarm__feed-empty">Booting agent stream…</li>
+          ) : live.activities.length === 0 ? (
+            <li className="swarm__feed-empty">Waiting for the first write…</li>
+          ) : (
+            live.activities.map((row, index) => (
+              <li
+                key={row.id}
+                className={`swarm__row swarm__row--${row.kind}`}
+                style={{ animationDelay: `${index * 30}ms` }}
+              >
+                <time dateTime={new Date(row.at).toISOString()}>
+                  {new Date(row.at).toLocaleTimeString()}
+                </time>
+                <span className="swarm__row-agent">{row.agent}</span>
+                <span className="swarm__row-msg">{row.message}</span>
+              </li>
+            ))
+          )}
+        </ol>
+      </section>
 
       <footer className="footer">
-        <span>MIT · npm package <code>worker-sync-db</code></span>
+        <span>
+          MIT · npm package <code>worker-sync-db</code>
+        </span>
       </footer>
     </div>
   );
