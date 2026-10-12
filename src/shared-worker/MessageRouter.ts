@@ -181,7 +181,7 @@ export class MessageRouter {
         });
         if (enqueueSync) {
           await this.remoteSync.refreshPendingCount();
-          void this.remoteSync.syncNow();
+          this.remoteSync.scheduleSync();
         }
         return { kind: 'response', requestId, ok: true, data: doc };
       }
@@ -202,7 +202,7 @@ export class MessageRouter {
         });
         if (enqueueSync) {
           await this.remoteSync.refreshPendingCount();
-          void this.remoteSync.syncNow();
+          this.remoteSync.scheduleSync();
         }
         return { kind: 'response', requestId, ok: true, data: result.doc };
       }
