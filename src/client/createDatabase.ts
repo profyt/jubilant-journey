@@ -16,11 +16,17 @@ import type {
   SyncStatus,
 } from '../sync/RemoteSyncAdapter.js';
 import { dedicatedWorkerUrl, sharedWorkerUrl } from '../workerUrls.js';
+import { createCrossTabBroadcaster } from './crossTabBroadcast.js';
 import { connectDedicatedWorker } from './DedicatedWorkerBridge.js';
 import type { PortBridge } from './PortBridge.js';
 import { connectSharedWorker } from './SharedWorkerBridge.js';
 
 export type WorkerMode = 'auto' | 'shared' | 'dedicated';
+
+/** How to fan out live changes when SharedWorker is unavailable. */
+export type CrossTabFallback = 'none' | 'broadcast-channel' | 'auto';
+
+export type CrossTabTransport = 'shared-worker' | 'broadcast-channel' | 'none';
 
 export type RemoteConfig = RemoteSyncAdapter | FetchSyncConfig;
 
@@ -30,6 +36,13 @@ export interface CreateDatabaseOptions<S extends CollectionSchema> {
   sharedWorker?: string | URL;
   dedicatedWorker?: string | URL;
   mode?: WorkerMode;
+  /**
+   * Cross-tab live updates when resolved mode is `dedicated`.
+   * - `auto` (default): use `BroadcastChannel` in dedicated mode
+   * - `broadcast-channel`: always enable BC relay (even alongside SharedWorker — usually unnecessary)
+   * - `none`: no cross-tab relay in dedicated mode
+   */
+  crossTabFallback?: CrossTabFallback;
   remote?: RemoteConfig;
   onConflict?: (conflict: { opId: string; reason: string }) => void;
 }
@@ -42,6 +55,10 @@ export type ChangeEvent<T> = {
 };
 
 export interface DatabaseClient<S extends CollectionSchema> {
+  /** Resolved runtime worker mode (`shared` or `dedicated`). */
+  getWorkerMode(): 'shared' | 'dedicated';
+  /** How live multi-tab changes are delivered. */
+  getCrossTabTransport(): CrossTabTransport;
   get<C extends keyof S & string>(
     collection: C,
     id: string,
@@ -50,14 +67,28 @@ export interface DatabaseClient<S extends CollectionSchema> {
     collection: C,
     doc: DocInput<S, C>,
   ): Promise<InferDoc<S, C>>;
+  putMany<C extends keyof S & string>(
+    collection: C,
+    docs: Array<Record<string, unknown> & { id: string }>,
+  ): Promise<InferDoc<S, C>[]>;
   delete<C extends keyof S & string>(
     collection: C,
     id: string,
   ): Promise<InferDoc<S, C>>;
+  deleteMany<C extends keyof S & string>(
+    collection: C,
+    ids: string[],
+  ): Promise<InferDoc<S, C>[]>;
+  /** Soft-delete all non-deleted documents in the collection. */
+  clear<C extends keyof S & string>(collection: C): Promise<InferDoc<S, C>[]>;
   query<C extends keyof S & string>(
     collection: C,
     opts?: QueryOptions,
   ): Promise<InferDoc<S, C>[]>;
+  count<C extends keyof S & string>(
+    collection: C,
+    opts?: Omit<QueryOptions, 'limit'>,
+  ): Promise<number>;
   subscribe<C extends keyof S & string>(
     collection: C,
     listener: (event: ChangeEvent<InferDoc<S, C>>) => void,
@@ -86,6 +117,15 @@ export function resolveWorkerMode(mode: WorkerMode = 'auto'): 'shared' | 'dedica
   return isSharedWorkerSupported() ? 'shared' : 'dedicated';
 }
 
+export function resolveCrossTabFallback(
+  workerMode: 'shared' | 'dedicated',
+  option: CrossTabFallback = 'auto',
+): 'none' | 'broadcast-channel' {
+  if (option === 'none') return 'none';
+  if (option === 'broadcast-channel') return 'broadcast-channel';
+  return workerMode === 'dedicated' ? 'broadcast-channel' : 'none';
+}
+
 function isFetchSyncConfig(remote: RemoteConfig): remote is FetchSyncConfig {
   return 'pullUrl' in remote && 'pushUrl' in remote;
 }
@@ -100,6 +140,10 @@ export async function createDatabase<S extends CollectionSchema>(
   }
 
   const resolvedMode = resolveWorkerMode(options.mode);
+  const fallback = resolveCrossTabFallback(
+    resolvedMode,
+    options.crossTabFallback ?? 'auto',
+  );
   const remoteAdapter = options.remote && !isFetchSyncConfig(options.remote)
     ? options.remote
     : undefined;
@@ -132,22 +176,40 @@ export async function createDatabase<S extends CollectionSchema>(
       sync,
       onConflict: options.onConflict,
     });
+    if (fallback === 'broadcast-channel') {
+      console.warn(
+        '[worker-sync-db] SharedWorker unavailable — using dedicated worker with BroadcastChannel cross-tab relay. ' +
+          'Set crossTabFallback: "none" to disable. Safari/WebViews still lack SharedWorker multi-tab semantics for sync leadership.',
+      );
+    } else {
+      console.warn(
+        '[worker-sync-db] SharedWorker unavailable — using dedicated worker; cross-tab live updates are disabled ' +
+          '(crossTabFallback: "none"). Enable crossTabFallback: "broadcast-channel" or "auto" for BroadcastChannel relay.',
+      );
+    }
   }
 
-  return createClientFromBridge(bridge);
+  return createClientFromBridge(bridge, {
+    dbName: options.dbName,
+    workerMode: resolvedMode,
+    crossTabFallback: fallback,
+  });
 }
 
 function createClientFromBridge<S extends CollectionSchema>(
   bridge: PortBridge,
+  meta: {
+    dbName: string;
+    workerMode: 'shared' | 'dedicated';
+    crossTabFallback: 'none' | 'broadcast-channel';
+  },
 ): DatabaseClient<S> {
   const localSubscriptions = new Map<
     string,
     Set<(event: ChangeEvent<InferDoc<S, string>>) => void>
   >();
 
-  bridge.onEvent((event: WorkerEvent) => {
-    if (event.kind !== 'change') return;
-    const payload = event as ChangeEventPayload;
+  const deliverLocal = (payload: ChangeEventPayload) => {
     const listeners = localSubscriptions.get(payload.collection);
     if (!listeners) return;
     const changeEvent: ChangeEvent<InferDoc<S, string>> = {
@@ -159,9 +221,36 @@ function createClientFromBridge<S extends CollectionSchema>(
     for (const listener of listeners) {
       listener(changeEvent);
     }
+  };
+
+  const broadcaster =
+    meta.crossTabFallback === 'broadcast-channel'
+      ? createCrossTabBroadcaster(meta.dbName, deliverLocal)
+      : null;
+
+  const transport: CrossTabTransport =
+    meta.workerMode === 'shared'
+      ? 'shared-worker'
+      : broadcaster
+        ? 'broadcast-channel'
+        : 'none';
+
+  bridge.onEvent((event: WorkerEvent) => {
+    if (event.kind !== 'change') return;
+    const payload = event as ChangeEventPayload;
+    deliverLocal(payload);
+    broadcaster?.publish(payload);
   });
 
   return {
+    getWorkerMode() {
+      return meta.workerMode;
+    },
+
+    getCrossTabTransport() {
+      return transport;
+    },
+
     async get(collection, id) {
       return bridge.call({
         type: 'get',
@@ -178,12 +267,35 @@ function createClientFromBridge<S extends CollectionSchema>(
       }) as Promise<InferDoc<S, typeof collection>>;
     },
 
+    async putMany(collection, docs) {
+      return bridge.call({
+        type: 'putMany',
+        collection,
+        docs,
+      }) as Promise<InferDoc<S, typeof collection>[]>;
+    },
+
     async delete(collection, id) {
       return bridge.call({
         type: 'delete',
         collection,
         id,
       }) as Promise<InferDoc<S, typeof collection>>;
+    },
+
+    async deleteMany(collection, ids) {
+      return bridge.call({
+        type: 'deleteMany',
+        collection,
+        ids,
+      }) as Promise<InferDoc<S, typeof collection>[]>;
+    },
+
+    async clear(collection) {
+      return bridge.call({
+        type: 'clear',
+        collection,
+      }) as Promise<InferDoc<S, typeof collection>[]>;
     },
 
     async query(collection, opts = {}) {
@@ -195,6 +307,16 @@ function createClientFromBridge<S extends CollectionSchema>(
         limit: opts.limit,
         includeDeleted: opts.includeDeleted,
       }) as Promise<InferDoc<S, typeof collection>[]>;
+    },
+
+    async count(collection, opts = {}) {
+      return bridge.call({
+        type: 'count',
+        collection,
+        index: opts.index,
+        range: opts.range,
+        includeDeleted: opts.includeDeleted,
+      }) as Promise<number>;
     },
 
     subscribe(collection, listener, filter) {
@@ -234,6 +356,7 @@ function createClientFromBridge<S extends CollectionSchema>(
     },
 
     close() {
+      broadcaster?.close();
       void bridge.call({ type: 'disconnect' });
       bridge.close();
     },

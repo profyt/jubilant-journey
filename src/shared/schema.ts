@@ -89,6 +89,56 @@ export function schemasEqual(
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
+export type SchemaChangeKind = 'identical' | 'compatible' | 'incompatible';
+
+export interface SchemaChangeResult {
+  kind: SchemaChangeKind;
+  /** Human-readable reason when incompatible (or summary when compatible). */
+  detail: string;
+}
+
+/**
+ * Decide whether opening `next` against an existing DB with `previous` is safe.
+ * Compatible: add collections, add indexes (same keyPath), remove collections.
+ * Incompatible: change collection keyPath, change existing index keyPath.
+ */
+export function describeSchemaChange(
+  previous: CollectionSchema,
+  next: CollectionSchema,
+): SchemaChangeResult {
+  if (schemasEqual(previous, next)) {
+    return { kind: 'identical', detail: 'Schemas are identical' };
+  }
+
+  for (const [name, prevDef] of Object.entries(previous)) {
+    const nextDef = next[name];
+    if (!nextDef) {
+      continue; // collection removed — allowed (upgrade deletes store)
+    }
+    if (prevDef.keyPath !== nextDef.keyPath) {
+      return {
+        kind: 'incompatible',
+        detail: `Collection "${name}" keyPath changed from "${prevDef.keyPath}" to "${nextDef.keyPath}"`,
+      };
+    }
+    for (const [indexName, prevPath] of Object.entries(prevDef.indexes ?? {})) {
+      const nextPath = nextDef.indexes?.[indexName];
+      if (nextPath !== undefined && nextPath !== prevPath) {
+        return {
+          kind: 'incompatible',
+          detail: `Index "${name}.${indexName}" keyPath changed from "${prevPath}" to "${nextPath}"`,
+        };
+      }
+      // Dropping an index is ignored by IDB upgrade (index may linger); still compatible.
+    }
+  }
+
+  return {
+    kind: 'compatible',
+    detail: 'Additive or removable schema change (new stores/indexes or dropped stores)',
+  };
+}
+
 export function computeSchemaVersion(schema: CollectionSchema): number {
   const stores = Object.entries(schema).sort(([a], [b]) => a.localeCompare(b));
   let version = 1;

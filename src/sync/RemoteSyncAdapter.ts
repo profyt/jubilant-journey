@@ -23,6 +23,17 @@ export interface SyncStatus {
   lastSyncAt: number | null;
   lastError: string | null;
   online: boolean;
+  /** When the next debounced / backoff sync will run (epoch ms), or null. */
+  nextSyncAt: number | null;
+}
+
+export interface SyncSchedulerOptions {
+  /** Debounce after mutations before auto-sync. Default 300. */
+  debounceMs?: number;
+  /** Initial backoff after a failed sync. Default 1000. */
+  baseBackoffMs?: number;
+  /** Cap for exponential backoff. Default 30000. */
+  maxBackoffMs?: number;
 }
 
 export interface RemoteSyncAdapter {

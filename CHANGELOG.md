@@ -10,6 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `defineCollection<TDoc>()` + stronger `InferDoc` / `DocInput` so typed schemas flow into `get`/`put`/`query` (plain schemas unchanged)
+- Dedicated-mode DX: `getWorkerMode()` / `getCrossTabTransport()`, optional `BroadcastChannel` cross-tab relay (`crossTabFallback`, default `auto`)
+
+### Changed
+
+- E2E: cross-tab SharedWorker fan-out asserts document visibility on the reader tab (hard CI gate)
+- Schema migrations: compatible additive schema changes on reconnect; `describeSchemaChange()` helper; clearer `SchemaMismatch` for breaking changes
+- Sync scheduler: debounce after mutations, exponential backoff + jitter on failure, `SyncStatus.nextSyncAt`
+- `count(collection, opts?)` — count matching docs (index/range; soft-deleted excluded by default)
+- Bulk writes: `putMany`, `deleteMany`, and soft-delete `clear` on `DatabaseClient` (single IDB transaction per call)
 
 ## [0.1.1] - 2026-10-12
 

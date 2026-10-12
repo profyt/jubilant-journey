@@ -38,6 +38,14 @@ export const schema = defineSchema({
 
 `defineSchema` preserves literal collection names for typed `db.put('todos', ...)`.
 
+### Evolving the schema
+
+Safe (auto-migrated): add a collection, add an index, remove a collection.
+
+Breaking (`SchemaMismatch` unless you change `dbName`): change `keyPath`, change an existing index’s field.
+
+Dropped indexes are not deleted from IndexedDB automatically (they may linger harmlessly).
+
 ## Open a database
 
 ```typescript
