@@ -1,6 +1,6 @@
 {
   "name": "worker-sync-db",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Offline-first IndexedDB for web apps: SharedWorker multi-tab live updates and bring-your-own sync to your API (TypeScript, optional React hooks)",
   "type": "module",
   "main": "./dist/index.js",
