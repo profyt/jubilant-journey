@@ -51,6 +51,7 @@ export type WsdBenchApi = {
   throughput: (n?: number) => Promise<ThroughputResult>;
   latency: (n?: number) => Promise<LatencyResult>;
   putOne: (id: string, title: string) => Promise<void>;
+  getOne: (id: string) => Promise<{ id: string; title: string } | null>;
   waitChanges: (expected: number, timeoutMs?: number) => Promise<number>;
   clearChangeCount: () => void;
   getChangeCount: () => number;
@@ -230,6 +231,12 @@ async function boot(): Promise<void> {
 
     async putOne(id, title) {
       await db.put('items', { id, title, kind: 'x' });
+    },
+
+    async getOne(id) {
+      const doc = await db.get('items', id);
+      if (!doc) return null;
+      return { id: String(doc.id), title: String(doc.title ?? '') };
     },
 
     clearChangeCount() {

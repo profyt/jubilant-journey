@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- E2E: cross-tab SharedWorker fan-out asserts document visibility on the reader tab (hard CI gate)
 ### Added
 
 - Schema migrations: compatible additive schema changes on reconnect; `describeSchemaChange()` helper; clearer `SchemaMismatch` for breaking changes

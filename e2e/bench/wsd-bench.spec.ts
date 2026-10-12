@@ -53,10 +53,13 @@ test('SharedWorker + IndexedDB throughput & latency', async ({ page }) => {
 });
 
 test('cross-tab subscribe fan-out via SharedWorker', async ({ browser, baseURL }) => {
+  // Hard CI gate (#19): put in tab A must live-update tab B over SharedWorker.
   const context = await browser.newContext();
   const writer = await context.newPage();
   await writer.goto(`${baseURL}/bench.html`);
   await waitBenchReady(writer);
+  const mode = await writer.evaluate(() => window.__wsdBench!.workerMode);
+  expect(mode).toBe('shared');
   const dbName = await writer.evaluate(() => window.__wsdBench!.dbName);
 
   const reader = await context.newPage();
@@ -70,13 +73,20 @@ test('cross-tab subscribe fan-out via SharedWorker', async ({ browser, baseURL }
   }
 
   const received = await benchCall<number>(reader, 'waitChanges', N, 20_000);
+  const last = await benchCall<{ id: string; title: string } | null>(
+    reader,
+    'getOne',
+    `x-${N - 1}`,
+  );
   recordMetric('cross_tab_fanout', {
     events: N,
     received,
     dbName,
+    lastTitle: last?.title ?? null,
   });
 
   expect(received).toBeGreaterThanOrEqual(N);
+  expect(last).toEqual({ id: `x-${N - 1}`, title: `cross ${N - 1}` });
   await context.close();
 });
 
