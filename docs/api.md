@@ -74,6 +74,42 @@ Soft-deletes (`_deleted: true`). Returns the updated document or throws `NotFoun
 
 ---
 
+### `putMany(collection, docs)`
+
+```typescript
+putMany<C extends keyof S & string>(
+  collection: C,
+  docs: Array<Record<string, unknown> & { id: string }>,
+): Promise<InferDoc<S, C>[]>;
+```
+
+Upserts many documents in **one IndexedDB transaction**. Enqueues one sync op per doc when `remote` is set. Broadcasts a `put` change per document (same as `put`). Empty input → `[]`.
+
+---
+
+### `deleteMany(collection, ids)`
+
+```typescript
+deleteMany<C extends keyof S & string>(
+  collection: C,
+  ids: string[],
+): Promise<InferDoc<S, C>[]>;
+```
+
+Soft-deletes the given ids in one transaction. **Missing ids are skipped** (no error). Returns the soft-deleted documents. Broadcasts a `delete` change per deleted id.
+
+---
+
+### `clear(collection)`
+
+```typescript
+clear<C extends keyof S & string>(collection: C): Promise<InferDoc<S, C>[]>;
+```
+
+Soft-deletes **all non-deleted** documents in the collection (same semantics as repeated `delete`). Returns the soft-deleted documents.
+
+---
+
 ### `query(collection, opts?)`
 
 ```typescript
@@ -89,6 +125,19 @@ query<C extends keyof S & string>(
 | `range` | `IDBKeyRangeInit`: both bounds → `only`/`bound`; only `lower` → `lowerBound`; only `upper` → `upperBound` |
 | `limit` | Maximum number of results |
 | `includeDeleted` | Include soft-deleted documents |
+
+---
+
+### `count(collection, opts?)`
+
+```typescript
+count<C extends keyof S & string>(
+  collection: C,
+  opts?: Omit<QueryOptions, 'limit'>,
+): Promise<number>;
+```
+
+Returns how many documents match the same `index` / `range` / `includeDeleted` options as `query` (soft-deleted excluded by default). Prefer this over `query(...).length` for large collections.
 
 ---
 
@@ -143,6 +192,8 @@ interface SyncStatus {
   lastSyncAt: number | null;
   lastError: string | null;
   online: boolean;
+  /** Next debounced / backoff auto-sync (epoch ms), or null */
+  nextSyncAt: number | null;
 }
 ```
 
@@ -229,7 +280,7 @@ interface FetchSyncConfig {
 |------|---------|
 | `NotFound` | Document missing on delete |
 | `WorkerDead` | SharedWorker / Worker failed to load |
-| `SchemaMismatch` | Different schema for same `dbName` |
+| `SchemaMismatch` | Incompatible schema change for same `dbName` (e.g. `keyPath` change). Additive changes (new stores/indexes) migrate automatically. |
 | `NotConnected` | Port closed |
 | `Timeout` | RPC exceeded timeout (default 30s) |
 | `InvalidRequest` | Unknown request or aborted |

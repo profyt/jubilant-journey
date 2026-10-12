@@ -66,14 +66,28 @@ export interface DatabaseClient<S extends CollectionSchema> {
     collection: C,
     doc: Record<string, unknown> & { id: string },
   ): Promise<InferDoc<S, C>>;
+  putMany<C extends keyof S & string>(
+    collection: C,
+    docs: Array<Record<string, unknown> & { id: string }>,
+  ): Promise<InferDoc<S, C>[]>;
   delete<C extends keyof S & string>(
     collection: C,
     id: string,
   ): Promise<InferDoc<S, C>>;
+  deleteMany<C extends keyof S & string>(
+    collection: C,
+    ids: string[],
+  ): Promise<InferDoc<S, C>[]>;
+  /** Soft-delete all non-deleted documents in the collection. */
+  clear<C extends keyof S & string>(collection: C): Promise<InferDoc<S, C>[]>;
   query<C extends keyof S & string>(
     collection: C,
     opts?: QueryOptions,
   ): Promise<InferDoc<S, C>[]>;
+  count<C extends keyof S & string>(
+    collection: C,
+    opts?: Omit<QueryOptions, 'limit'>,
+  ): Promise<number>;
   subscribe<C extends keyof S & string>(
     collection: C,
     listener: (event: ChangeEvent<InferDoc<S, C>>) => void,
@@ -252,12 +266,35 @@ function createClientFromBridge<S extends CollectionSchema>(
       }) as Promise<InferDoc<S, typeof collection>>;
     },
 
+    async putMany(collection, docs) {
+      return bridge.call({
+        type: 'putMany',
+        collection,
+        docs,
+      }) as Promise<InferDoc<S, typeof collection>[]>;
+    },
+
     async delete(collection, id) {
       return bridge.call({
         type: 'delete',
         collection,
         id,
       }) as Promise<InferDoc<S, typeof collection>>;
+    },
+
+    async deleteMany(collection, ids) {
+      return bridge.call({
+        type: 'deleteMany',
+        collection,
+        ids,
+      }) as Promise<InferDoc<S, typeof collection>[]>;
+    },
+
+    async clear(collection) {
+      return bridge.call({
+        type: 'clear',
+        collection,
+      }) as Promise<InferDoc<S, typeof collection>[]>;
     },
 
     async query(collection, opts = {}) {
@@ -269,6 +306,16 @@ function createClientFromBridge<S extends CollectionSchema>(
         limit: opts.limit,
         includeDeleted: opts.includeDeleted,
       }) as Promise<InferDoc<S, typeof collection>[]>;
+    },
+
+    async count(collection, opts = {}) {
+      return bridge.call({
+        type: 'count',
+        collection,
+        index: opts.index,
+        range: opts.range,
+        includeDeleted: opts.includeDeleted,
+      }) as Promise<number>;
     },
 
     subscribe(collection, listener, filter) {

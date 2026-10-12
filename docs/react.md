@@ -72,7 +72,7 @@ useSubscribe('todos', (event) => console.log(event), {
 
 ```tsx
 const status = useSyncStatus(); // or useSyncStatus(db)
-// { pending, lastSyncAt, lastError, online }
+// { pending, lastSyncAt, lastError, online, nextSyncAt }
 ```
 
 ## `useDatabase`

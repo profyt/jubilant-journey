@@ -2,12 +2,15 @@
 
 ## `SchemaMismatch`
 
-**Cause:** A tab connected with a different `schema` than the first client that opened `dbName`.
+**Cause:** A tab connected with an **incompatible** schema for the same `dbName` (for example changing a collection `keyPath`, or changing an existing index’s key path).
+
+**Compatible (auto-migrated on connect):** adding collections, adding indexes, removing collections.
 
 **Fix:**
 
-- Deploy schema changes atomically (all users reload).
-- Use a new `dbName` for breaking schema changes.
+- Prefer additive schema changes; ship them so all tabs reload onto the new schema.
+- For breaking changes (`keyPath` / index path), use a new `dbName` (or wipe IndexedDB) and document the migration for users.
+- Use `describeSchemaChange(previous, next)` to check compatibility in tooling.
 - Clear IndexedDB in DevTools during development.
 
 ## Changes not appearing in another tab

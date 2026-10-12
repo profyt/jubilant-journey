@@ -6,8 +6,9 @@ worker-sync-db uses an **offline-first** model:
 
 1. `put` / `delete` write to IndexedDB immediately.
 2. When `remote` is configured, each mutation is appended to `sync_queue` as a `PendingOp` (local-only DBs do not enqueue).
-3. `syncNow()` (also scheduled after writes) pushes pending ops, then pulls remote changes.
-4. Remote changes merge with **LWW** (last write wins) using `_updatedAt` and `_version`, then **broadcast** to subscribed tabs as `change` events.
+3. After writes, sync is **debounced** (~300ms) via `scheduleSync`. Explicit `syncNow()` runs immediately.
+4. On sync failure, the worker schedules an **exponential backoff** retry (with jitter), exposed as `SyncStatus.nextSyncAt`. Auto-sync pauses while `online: false` and resumes on `online`.
+5. Remote changes merge with **LWW** (last write wins) using `_updatedAt` and `_version`, then **broadcast** to subscribed tabs as `change` events.
 
 ## Delegate vs fetch
 
@@ -154,4 +155,5 @@ await db.syncNow();
 | `pending` | Ops waiting in sync queue |
 | `lastSyncAt` | Timestamp of last successful sync |
 | `lastError` | Last error message or null |
+| `nextSyncAt` | Epoch ms when the next auto-sync (debounce/backoff) will run, or `null` |
 | `online` | `navigator.onLine` in worker |
