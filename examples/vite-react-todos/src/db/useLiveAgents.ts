@@ -87,21 +87,21 @@ export function useLiveAgents() {
       (d) => !(d as TodoDoc)._deleted && (d as TodoDoc).status === 'open',
     ) as TodoDoc[];
 
-    // Mix of create vs toggle keeps the list lively without unbounded growth.
-    if (open.length > 0 && Math.random() < 0.45) {
+    // Prefer toggles as the list grows so the demo stays readable.
+    const toggleBias = open.length >= 8 ? 0.82 : open.length > 0 ? 0.5 : 0;
+    if (open.length > 0 && Math.random() < toggleBias) {
       const todo = pick(open);
-      const next = todo.status === 'open' ? 'done' : 'open';
       await db.put('todos', {
         id: todo.id,
         title: todo.title,
-        status: next,
+        status: 'done',
         agent: agent.id,
       });
       await logActivity(
         db,
         agent.name,
         'agent_toggle',
-        `${next === 'done' ? 'completed' : 'reopened'} “${todo.title}”`,
+        `completed “${todo.title}”`,
       );
       return;
     }

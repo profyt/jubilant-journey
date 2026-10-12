@@ -125,110 +125,116 @@ export function App() {
         </header>
 
         <main id="playground" className="playground">
-          <div className="playground__head">
-            <h2>Live todos</h2>
-            <p>
-              Add or complete tasks — they persist offline. Agents below also write
-              here through the same worker DB.
-            </p>
-          </div>
+          <div className="playground__chrome">
+            <div className="playground__head">
+              <h2>Live todos</h2>
+              <p>
+                Add or complete tasks — they persist offline. Agents below also write
+                here through the same worker DB.
+              </p>
+            </div>
 
-          <div className={`status ${pulse ? 'status--pulse' : ''}`}>
-            <span
-              className={`status__dot ${syncStatus?.online === false ? 'is-offline' : ''}`}
-              title={syncStatus?.online === false ? 'Offline' : 'Online'}
-            />
-            <span>Pending: {syncStatus?.pending ?? '—'}</span>
-            {syncStatus?.lastSyncAt ? (
-              <span>
-                Last sync: {new Date(syncStatus.lastSyncAt).toLocaleTimeString()}
-              </span>
-            ) : (
-              <span>Not synced yet</span>
-            )}
-            {syncStatus?.lastError && (
-              <span className="status__error">{syncStatus.lastError}</span>
-            )}
-            <button
-              type="button"
-              className="btn btn--small"
-              onClick={() => void syncNow()}
-            >
-              Sync now
-            </button>
-          </div>
-
-          <form
-            className="composer"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void addTodo(title).then(() => setTitle(''));
-            }}
-          >
-            <input
-              type="text"
-              placeholder="What should stay in sync?"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              disabled={loading && todos.length === 0}
-              aria-label="New todo title"
-            />
-            <button
-              type="submit"
-              className="btn btn--primary"
-              disabled={!title.trim()}
-            >
-              Add
-            </button>
-          </form>
-
-          <div className="filters" role="tablist" aria-label="Filter todos">
-            {(['all', 'open', 'done'] as const).map((f) => (
+            <div className={`status ${pulse ? 'status--pulse' : ''}`}>
+              <span
+                className={`status__dot ${syncStatus?.online === false ? 'is-offline' : ''}`}
+                title={syncStatus?.online === false ? 'Offline' : 'Online'}
+              />
+              <span>Pending: {syncStatus?.pending ?? '—'}</span>
+              {syncStatus?.lastSyncAt ? (
+                <span>
+                  Last sync: {new Date(syncStatus.lastSyncAt).toLocaleTimeString()}
+                </span>
+              ) : (
+                <span>Not synced yet</span>
+              )}
+              {syncStatus?.lastError && (
+                <span className="status__error">{syncStatus.lastError}</span>
+              )}
               <button
-                key={f}
                 type="button"
-                role="tab"
-                aria-selected={filter === f}
-                className={filter === f ? 'is-active' : ''}
-                onClick={() => setFilter(f)}
+                className="btn btn--small"
+                onClick={() => void syncNow()}
               >
-                {f}
+                Sync now
               </button>
-            ))}
+            </div>
+
+            <form
+              className="composer"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void addTodo(title).then(() => setTitle(''));
+              }}
+            >
+              <input
+                type="text"
+                placeholder="What should stay in sync?"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                disabled={loading && todos.length === 0}
+                aria-label="New todo title"
+              />
+              <button
+                type="submit"
+                className="btn btn--primary"
+                disabled={!title.trim()}
+              >
+                Add
+              </button>
+            </form>
+
+            <div className="filters" role="tablist" aria-label="Filter todos">
+              {(['all', 'open', 'done'] as const).map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  role="tab"
+                  aria-selected={filter === f}
+                  className={filter === f ? 'is-active' : ''}
+                  onClick={() => setFilter(f)}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {loading && todos.length === 0 ? (
-            <p className="empty">Loading…</p>
-          ) : todos.length === 0 ? (
-            <p className="empty">No todos yet — add one, or let agents start writing.</p>
-          ) : (
-            <ul className="todo-list">
-              {todos.map((todo, index) => (
-                <li
-                  key={todo.id}
-                  className={todo.status === 'done' ? 'is-done' : ''}
-                  style={{ animationDelay: `${index * 40}ms` }}
-                >
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={todo.status === 'done'}
-                      onChange={() => void toggleTodo(todo)}
-                    />
-                    <span>{todo.title}</span>
-                  </label>
-                  <button
-                    type="button"
-                    className="todo-list__remove"
-                    onClick={() => void removeTodo(todo.id)}
-                    aria-label={`Delete ${todo.title}`}
+          <div className="playground__list">
+            {loading && todos.length === 0 ? (
+              <p className="empty">Loading…</p>
+            ) : todos.length === 0 ? (
+              <p className="empty">
+                No todos yet — add one, or let agents start writing.
+              </p>
+            ) : (
+              <ul className="todo-list">
+                {todos.map((todo, index) => (
+                  <li
+                    key={todo.id}
+                    className={todo.status === 'done' ? 'is-done' : ''}
+                    style={{ animationDelay: `${Math.min(index, 12) * 40}ms` }}
                   >
-                    Remove
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={todo.status === 'done'}
+                        onChange={() => void toggleTodo(todo)}
+                      />
+                      <span>{todo.title}</span>
+                    </label>
+                    <button
+                      type="button"
+                      className="todo-list__remove"
+                      onClick={() => void removeTodo(todo.id)}
+                      aria-label={`Delete ${todo.title}`}
+                    >
+                      Remove
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </main>
       </div>
 
