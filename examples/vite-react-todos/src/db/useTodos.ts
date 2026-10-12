@@ -8,6 +8,7 @@ function toTodo(doc: TodoDoc): Todo {
     id: doc.id,
     title: String(doc.title ?? ''),
     status: doc.status as TodoStatus,
+    ...(doc.agent ? { agent: String(doc.agent) } : {}),
   };
 }
 
@@ -42,8 +43,10 @@ export function useTodos(filter: TodoStatus | 'all') {
     async (todo: Todo) => {
       if (!db) return;
       await db.put('todos', {
-        ...todo,
+        id: todo.id,
+        title: todo.title,
         status: todo.status === 'open' ? 'done' : 'open',
+        ...(todo.agent ? { agent: todo.agent } : {}),
       });
     },
     [db],
