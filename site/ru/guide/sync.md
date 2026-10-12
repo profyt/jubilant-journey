@@ -1,10 +1,10 @@
-# Удалённый / BYO sync
+# Свой бэкенд (BYO sync)
 
 worker-sync-db работает по модели **offline-first** с опциональной синхронизацией на ваш бэкенд.
 
 1. `put` / `delete` сразу пишут в IndexedDB.
-2. Если настроен `remote`, каждая мутация добавляется в `sync_queue` как `PendingOp` (чисто локальные БД очередь не наполняют).
-3. `syncNow()` (также планируется после записей) пушит отложенные ops, затем тянет удалённые изменения.
+2. Если настроен `remote`, каждая мутация добавляется в `sync_queue` как `PendingOp` (без `remote` очередь не наполняется).
+3. `syncNow()` (также планируется после записей) отправляет отложенные операции, затем забирает удалённые изменения.
 4. Удалённые изменения мержатся по **LWW** (last write wins) через `_updatedAt` и `_version`, затем **рассылаются** подписанным вкладкам как события `change`.
 
 Конфликты решаются last-write-wins по времени — в v1 нет CRDT.
@@ -13,7 +13,7 @@ worker-sync-db работает по модели **offline-first** с опци�
 
 ### Режим delegate (`RemoteSyncAdapter`)
 
-Когда нужны кастомная авторизация, ретраи или не-REST протоколы. Функции выполняются на **leader-вкладке** (первая подключённая вкладка с `syncCapable: true`). Остальные вкладки получают только broadcast `SyncStatus`.
+Когда нужны своя авторизация, ретраи или не-REST протоколы. Функции выполняются на **leader-вкладке** (первая подключённая вкладка с `syncCapable: true`). Остальные вкладки получают только broadcast `SyncStatus`.
 
 ```typescript
 import { createDatabase, sharedWorkerUrl, dedicatedWorkerUrl } from 'worker-sync-db';
@@ -45,7 +45,7 @@ const db = await createDatabase({
 
 ### Режим fetch (`FetchSyncConfig`)
 
-Для простых REST-эндпоинтов без кастомной клиентской логики. HTTP выполняется внутри SharedWorker через `fetch()`.
+Для простых REST-эндпоинтов без своей клиентской логики. HTTP выполняется внутри SharedWorker через `fetch()`.
 
 ```typescript
 remote: {
@@ -122,11 +122,11 @@ db.onSyncStatusChange((status) => {
 await db.syncNow();
 ```
 
-| Field | Meaning |
-|-------|---------|
-| `pending` | Ops в очереди sync |
+| Поле | Значение |
+|------|----------|
+| `pending` | Операции в очереди sync |
 | `lastSyncAt` | Время последней успешной синхронизации |
-| `lastError` | Последнее сообщение об ошибке или null |
+| `lastError` | Последнее сообщение об ошибке или `null` |
 | `online` | `navigator.onLine` в worker |
 
 ## Mock-адаптер

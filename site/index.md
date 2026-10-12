@@ -35,6 +35,7 @@ features:
   <a href="./guide/sync">Remote sync</a>
   <a href="https://profyt.github.io/jubilant-journey/">Open live demo</a>
   <a href="https://www.npmjs.com/package/worker-sync-db">npm · worker-sync-db</a>
+  <a href="https://profyt.github.io/jubilant-journey/llms.txt">llms.txt (agents)</a>
 </div>
 
 ## Install

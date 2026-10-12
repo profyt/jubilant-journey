@@ -1,6 +1,6 @@
 # Обзор API
 
-Публичная поверхность `worker-sync-db`. Типы выводятся из схемы через `defineSchema`.
+Публичный API пакета `worker-sync-db`. Типы выводятся из схемы через `defineSchema`.
 
 ## `createDatabase(options)`
 
@@ -12,15 +12,15 @@ function createDatabase<S extends CollectionSchema>(
 
 ### `CreateDatabaseOptions`
 
-| Option | Type | Required | Description |
-|--------|------|----------|-------------|
-| `schema` | `S extends CollectionSchema` | yes | Определения коллекций |
-| `dbName` | `string` | yes | Имя SharedWorker + имя IndexedDB |
-| `sharedWorker` | `string \| URL` | recommended | URL бандла shared-worker |
-| `dedicatedWorker` | `string \| URL` | recommended | URL бандла dedicated-worker |
-| `mode` | `'auto' \| 'shared' \| 'dedicated'` | no | По умолчанию `'auto'` |
-| `remote` | `RemoteSyncAdapter \| FetchSyncConfig` | no | Включает sync |
-| `onConflict` | `(conflict) => void` | no | Конфликты push (delegate-адаптер) |
+| Параметр | Тип | Обязательный | Описание |
+|----------|-----|--------------|----------|
+| `schema` | `S extends CollectionSchema` | да | Определения коллекций |
+| `dbName` | `string` | да | Имя SharedWorker + имя IndexedDB |
+| `sharedWorker` | `string \| URL` | рекомендуется | URL бандла shared-worker |
+| `dedicatedWorker` | `string \| URL` | рекомендуется | URL бандла dedicated-worker |
+| `mode` | `'auto' \| 'shared' \| 'dedicated'` | нет | По умолчанию `'auto'` |
+| `remote` | `RemoteSyncAdapter \| FetchSyncConfig` | нет | Включает синхронизацию |
+| `onConflict` | `(conflict) => void` | нет | Конфликты push (delegate-адаптер) |
 
 Бросает ошибку, если `window` не определён (SSR).
 
@@ -43,7 +43,7 @@ get<C extends keyof S & string>(
 ): Promise<InferDoc<S, C> | null>;
 ```
 
-Возвращает документ или `null`, если его нет или он soft-deleted.
+Возвращает документ или `null`, если его нет или он помечен soft-deleted.
 
 ### `put(collection, doc)`
 
@@ -54,7 +54,7 @@ put<C extends keyof S & string>(
 ): Promise<InferDoc<S, C>>;
 ```
 
-Upsert документа. Добавляет `_version`, `_updatedAt`. Ставит sync-операцию в очередь, если задан `remote`. Уведомляет все подписанные вкладки.
+Upsert документа. Добавляет `_version`, `_updatedAt`. Ставит операцию синхронизации в очередь, если задан `remote`. Уведомляет все подписанные вкладки.
 
 ### `delete(collection, id)`
 
@@ -76,8 +76,8 @@ query<C extends keyof S & string>(
 ): Promise<InferDoc<S, C>[]>;
 ```
 
-| `QueryOptions` | Description |
-|----------------|-------------|
+| `QueryOptions` | Описание |
+|----------------|----------|
 | `index` | Имя индекса из схемы |
 | `range` | `IDBKeyRangeInit`: обе границы → `only`/`bound`; только `lower` → `lowerBound`; только `upper` → `upperBound` |
 | `limit` | Максимум результатов |
@@ -106,7 +106,7 @@ subscribe<C extends keyof S & string>(
 
 Возвращает функцию отписки. Регистрируйте в каждой вкладке, которая должна получать live-обновления.
 
-Опциональный `filter` ограничивает fan-out worker для put, где `doc[field] === value` (при фильтре delete не доставляются). Фильтр берётся у **первого** подписчика коллекции во вкладке.
+Опциональный `filter` ограничивает fan-out worker для put, где `doc[field] === value` (при фильтре события delete не доставляются). Фильтр берётся у **первого** подписчика коллекции во вкладке.
 
 Также получает изменения, применённые из удалённого `pull` (не только локальные записи между вкладками).
 
@@ -116,7 +116,7 @@ subscribe<C extends keyof S & string>(
 syncNow(): Promise<SyncStatus>;
 ```
 
-Пушит отложенные операции, затем тянет удалённые изменения. Если `remote` не настроен, очередь не flush-ится.
+Отправляет отложенные операции (`push`), затем забирает удалённые изменения (`pull`). Если `remote` не настроен, очередь не отправляется.
 
 ### `getSyncStatus()` / `onSyncStatusChange(listener)`
 
@@ -182,8 +182,8 @@ interface FetchSyncConfig {
 
 `DatabaseError` с полем `code`:
 
-| Code | Meaning |
-|------|---------|
+| Код | Значение |
+|-----|----------|
 | `NotFound` | Документ не найден при delete |
 | `WorkerDead` | SharedWorker / Worker не загрузился |
 | `SchemaMismatch` | Другая схема для того же `dbName` |

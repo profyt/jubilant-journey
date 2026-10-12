@@ -1,11 +1,11 @@
 # Архитектура
 
-Карта клиента и worker. Исходники — в каталоге `src/` репозитория.
+Обзор клиента и worker. Исходники — в каталоге `src/` репозитория.
 
 ## Компоненты
 
-| Component | Location | Role |
-|-----------|----------|------|
+| Компонент | Расположение | Роль |
+|-----------|--------------|------|
 | `createDatabase` | `src/client/createDatabase.ts` | Публичное API, обёртка над `PortBridge` |
 | `PortBridge` | `src/client/PortBridge.ts` | RPC + события на `MessagePort` |
 | `SharedWorkerBridge` | `src/client/SharedWorkerBridge.ts` | `new SharedWorker()` + connect |
@@ -30,8 +30,8 @@ Tab A ──put──► SharedWorker ──IDB write──► response to Tab A
 
 Для схемы `{ todos: { keyPath: 'id' } }`:
 
-| Store | Purpose |
-|-------|---------|
+| Store | Назначение |
+|-------|------------|
 | `todos` | Пользовательские коллекции |
 | `_meta` | Ключ-значение курсора sync |
 | `sync_queue` | Отложенные записи `PendingOp` |
@@ -48,6 +48,6 @@ Tab A ──put──► SharedWorker ──IDB write──► response to Tab A
 
 1. Первый способный клиент становится sync leader.
 2. `RemoteSync` шлёт `sync:pull` / `sync:push` только на порт leader.
-3. Если leader отключается, продвигается следующий клиент с `syncCapable`.
+3. Если leader отключается, роль переходит к следующему клиенту с `syncCapable`.
 
 В fetch-режиме HTTP идёт внутри worker; в delegate-режиме HTTP выполняется на leader-вкладке.

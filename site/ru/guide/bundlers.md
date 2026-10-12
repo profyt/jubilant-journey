@@ -33,7 +33,7 @@ const db = await createDatabase({
 
 `sharedWorkerUrl` и `dedicatedWorkerUrl` — объекты `URL`, собранные через `new URL('./shared-worker/entry.js', import.meta.url)` **внутри пакета**. Бандлеры (Vite, Webpack 5) распознают этот паттерн в `node_modules` и эмитят worker-чанки.
 
-Бандлы worker **инлайнят `idb`**, поэтому они самодостаточны.
+Бандлы worker **включают `idb` внутрь**, поэтому они самодостаточны.
 
 Оба параметра можно опустить — `createDatabase` берёт эти экспорты по умолчанию.
 
@@ -47,11 +47,11 @@ const db = await createDatabase({
 import sharedWorkerUrl from 'worker-sync-db/dist/shared-worker/entry.js?url';
 ```
 
-Полезно, если тулчейн не прослеживает `new URL` в зависимостях.
+Полезно, если сборка не отслеживает `new URL` внутри зависимостей.
 
 ## Локальный монорепозиторий / зависимость `file:`
 
-При линковке библиотеки из этого репозитория:
+При подключении библиотеки из этого репозитория:
 
 ```json
 "worker-sync-db": "file:../.."

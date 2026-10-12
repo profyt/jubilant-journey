@@ -26,7 +26,7 @@ function guideSidebar(prefix: '' | '/ru'): DefaultTheme.SidebarItem[] {
         text: 'Возможности',
         items: [
           { text: 'React-хуки', link: `${p}/guide/react` },
-          { text: 'Удалённый / BYO sync', link: `${p}/guide/sync` },
+          { text: 'Свой бэкенд (BYO sync)', link: `${p}/guide/sync` },
           { text: 'Несколько вкладок', link: `${p}/guide/multi-tab` },
         ],
       },
@@ -204,7 +204,7 @@ export default defineConfig({
       link: '/ru/',
       title: 'worker-sync-db',
       description:
-        'Offline-first IndexedDB для веб-приложений — живые обновления между вкладками и свой бэкенд для sync.',
+        'Offline-first IndexedDB для веб-приложений — живые обновления во всех вкладках и синхронизация с вашим API.',
       themeConfig: {
         siteTitle: 'worker-sync-db',
         nav: nav('/ru'),
@@ -219,7 +219,7 @@ export default defineConfig({
         },
         footer: {
           message:
-            'MIT License · offline-first IndexedDB с синхронизацией через SharedWorker',
+            'MIT License · offline-first IndexedDB и синхронизация через SharedWorker',
           copyright: '© участники worker-sync-db',
         },
         outline: {

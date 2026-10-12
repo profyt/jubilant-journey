@@ -32,7 +32,7 @@ const db = await createDatabase({
 });
 ```
 
-Dedicated-режим: **без sync между вкладками**.
+Dedicated-режим: **без синхронизации между вкладками**.
 
 ## `Port closed` или worker не загрузился
 
@@ -72,12 +72,12 @@ await createDatabase({
 
 ## IndexedDB `QuotaExceededError`
 
-Часто в приватном режиме Safari или при заполненном диске. Ловите ошибки хранилища и предупреждайте пользователей; уменьшайте размер данных.
+Часто в приватном режиме Safari или при заполненном диске. Ловите ошибки хранилища и предупреждайте пользователей; уменьшайте объём данных.
 
 ## DevTools
 
-| Tool | Location |
-|------|----------|
+| Инструмент | Где смотреть |
+|------------|--------------|
 | Консоль SharedWorker | Application → Shared workers → ваш `dbName` |
 | IndexedDB | Application → IndexedDB → `dbName` |
 | Отложенные sync ops | object store `sync_queue` |

@@ -32,3 +32,5 @@ Switch language with the VitePress locale menu in the docs navbar (English / Р�
 `DOCS_BASE` (default `/jubilant-journey/docs/`) and `DEMO_URL` (default absolute Pages demo URL) must match the GitHub Pages project path.
 
 Content is adapted from repo `docs/*.md` — keep API wording aligned when either side changes. Russian pages live under `site/ru/` and mirror the English tree.
+
+Agent crawler files `llms.txt` / `llms-full.txt` live at the **repo root** and are copied to the Pages root (and `/docs/`) by `.github/workflows/pages.yml`.
