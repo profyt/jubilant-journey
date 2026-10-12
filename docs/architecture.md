@@ -76,9 +76,9 @@ For schema `{ todos: { keyPath: 'id' } }`:
 
 ## Schema versioning
 
-`computeSchemaVersion(schema)` hashes collection names, key paths, and indexes into an integer used as IndexedDB `version`. Changing the schema triggers `upgrade` and creates new indexes/stores.
+`computeSchemaVersion(schema)` hashes collection names, key paths, and indexes into an integer used as IndexedDB `version`. Changing the schema bumps the version and runs `upgrade` (create stores/indexes, delete removed stores).
 
-All tabs connecting to the same `dbName` must use an identical schema JSON shape or `connect` returns `SchemaMismatch`.
+`describeSchemaChange(previous, next)` classifies changes as identical / compatible / incompatible. Compatible upgrades are applied on `connect`; incompatible ones return `SchemaMismatch`.
 
 ## Leader election
 

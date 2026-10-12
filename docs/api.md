@@ -228,7 +228,7 @@ interface FetchSyncConfig {
 |------|---------|
 | `NotFound` | Document missing on delete |
 | `WorkerDead` | SharedWorker / Worker failed to load |
-| `SchemaMismatch` | Different schema for same `dbName` |
+| `SchemaMismatch` | Incompatible schema change for same `dbName` (e.g. `keyPath` change). Additive changes (new stores/indexes) migrate automatically. |
 | `NotConnected` | Port closed |
 | `Timeout` | RPC exceeded timeout (default 30s) |
 | `InvalidRequest` | Unknown request or aborted |

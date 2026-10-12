@@ -7,7 +7,7 @@ import type {
   WorkerResponse,
 } from '../shared/protocol.js';
 import { isWorkerRequest, isWorkerResponse } from '../shared/protocol.js';
-import { schemasEqual } from '../shared/schema.js';
+import { describeSchemaChange } from '../shared/schema.js';
 import type { ClientRegistry } from './ClientRegistry.js';
 import type { DbEngine } from './DbEngine.js';
 import type { RemoteSync } from './RemoteSync.js';
@@ -95,15 +95,16 @@ export class MessageRouter {
         }
 
         const existingSchema = this.db.getSchema();
-        if (
-          existingSchema &&
-          !schemasEqual(existingSchema, request.schema)
-        ) {
-          return this.fail(
-            requestId,
-            'SchemaMismatch',
-            'Schema does not match existing database',
-          );
+        if (existingSchema) {
+          const change = describeSchemaChange(existingSchema, request.schema);
+          if (change.kind === 'incompatible') {
+            return this.fail(
+              requestId,
+              'SchemaMismatch',
+              `Incompatible schema change: ${change.detail}`,
+            );
+          }
+          // identical | compatible → init (no-op or IDB upgrade)
         }
 
         await this.db.init(request.dbName, request.schema);
