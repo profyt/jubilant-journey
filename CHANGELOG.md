@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Bulk writes: `putMany`, `deleteMany`, and soft-delete `clear` on `DatabaseClient` (single IDB transaction per call)
+
 ## [0.1.1] - 2026-10-12
 
 ### Added

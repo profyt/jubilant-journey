@@ -107,6 +107,57 @@ describe('DbEngine', () => {
     expect(merged.title).toBe('Remote');
   });
 
+  it('putMany writes all docs and enqueues ops', async () => {
+    const results = await engine.putMany('todos', [
+      { id: '1', title: 'A', status: 'open' },
+      { id: '2', title: 'B', status: 'done' },
+    ]);
+    expect(results).toHaveLength(2);
+    expect(await engine.get('todos', '1')).toMatchObject({ title: 'A' });
+    expect(await engine.get('todos', '2')).toMatchObject({ title: 'B' });
+    expect(await engine.getPendingOps()).toHaveLength(2);
+  });
+
+  it('putMany skips sync queue when enqueueSync is false', async () => {
+    await engine.putMany(
+      'todos',
+      [{ id: '1', title: 'A', status: 'open' }],
+      { enqueueSync: false },
+    );
+    expect(await engine.getPendingOps()).toHaveLength(0);
+  });
+
+  it('deleteMany soft-deletes found ids and skips missing', async () => {
+    await engine.putMany(
+      'todos',
+      [
+        { id: '1', title: 'A', status: 'open' },
+        { id: '2', title: 'B', status: 'open' },
+      ],
+      { enqueueSync: false },
+    );
+    const deleted = await engine.deleteMany('todos', ['1', 'missing', '2'], {
+      enqueueSync: false,
+    });
+    expect(deleted.map((d) => d.doc.id).sort()).toEqual(['1', '2']);
+    expect(await engine.get('todos', '1')).toBeNull();
+    expect(await engine.get('todos', '2')).toBeNull();
+  });
+
+  it('clear soft-deletes all live documents', async () => {
+    await engine.putMany(
+      'todos',
+      [
+        { id: '1', title: 'A', status: 'open' },
+        { id: '2', title: 'B', status: 'open' },
+      ],
+      { enqueueSync: false },
+    );
+    const cleared = await engine.clear('todos', { enqueueSync: false });
+    expect(cleared).toHaveLength(2);
+    expect(await engine.query({ collection: 'todos' })).toHaveLength(0);
+  });
+
   it('rejects stale remote change', async () => {
     const { doc: local } = await engine.put('todos', {
       id: '1',
