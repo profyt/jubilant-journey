@@ -16,6 +16,15 @@ npm test -- tests/persistence-stress.test.ts
 
 Fake-IndexedDB stress: large sync queue drain, reopen same `dbName` mid-sync (pending retained then drained), soft large-payload `putMany` (not a real browser quota probe).
 
+### Real-browser persistence / quota (Chromium Playwright)
+
+```bash
+npx playwright install chromium
+npm run bench:e2e -- e2e/bench/persistence-quota.spec.ts
+```
+
+Included in the CI `bench-e2e` job: ~2 MiB `putMany` payload, reopen same `dbName`, and a second-page read after the writer closes. Handles `QuotaExceededError` without failing the suite when the browser enforces quota early.
+
 ## Performance / load tests
 
 ```bash
