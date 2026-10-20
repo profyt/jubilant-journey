@@ -18,7 +18,10 @@ function mockSyncApi(): Plugin {
   };
 }
 
+const base = process.env.VITE_BASE || '/';
+
 export default defineConfig({
+  base,
   plugins: [react(), mockSyncApi()],
   resolve: {
     alias: {
@@ -33,5 +36,8 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: ['worker-sync-db'],
+  },
+  build: {
+    assetsDir: 'assets',
   },
 });

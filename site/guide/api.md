@@ -142,6 +142,18 @@ interface SyncStatus {
 
 Queue helpers: `getPendingOps()`, `discardPendingOps(opIds?)`, `discardFailedOps()` — then `syncNow()` to retry.
 
+### `getDiagnostics()`
+
+```typescript
+getDiagnostics(): Promise<DatabaseDiagnostics>;
+```
+
+Read-only health snapshot: `workerMode`, `crossTabTransport`, `queueDepth` / `pending`, plus sync fields (`lastSyncAt`, `lastError`, `nextSyncAt`, `online`).
+
+### `pauseSync()` / `resumeSync()`
+
+Suspend or resume **automatic** sync (debounce / backoff). Explicit `syncNow()` still runs while paused.
+
 ### `close()`
 
 Sends `disconnect`, closes the port, rejects in-flight RPCs.

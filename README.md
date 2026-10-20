@@ -1,10 +1,18 @@
 # worker-sync-db
 
-> **Suggested GitHub description:** Offline-first local database for web apps — one IndexedDB per site, live updates across tabs, sync to your own API.
+[![npm version](https://img.shields.io/npm/v/worker-sync-db.svg)](https://www.npmjs.com/package/worker-sync-db)
+[![npm downloads](https://img.shields.io/npm/dm/worker-sync-db.svg)](https://www.npmjs.com/package/worker-sync-db)
+[![CI](https://github.com/profyt/jubilant-journey/actions/workflows/ci.yml/badge.svg)](https://github.com/profyt/jubilant-journey/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+
+> **Suggested GitHub About (paste in repo Settings → General):**  
+> Offline-first IndexedDB for web apps — multi-tab live updates and bring-your-own sync.
+
+> **Suggested GitHub Topics:** `indexeddb` · `offline-first` · `sharedworker` · `local-first` · `typescript` · `react` · `pwa` · `sync` · `multi-tab`
 
 **worker-sync-db** helps you build **offline-first SPAs** without a proprietary sync SaaS: data lives in the browser, updates instantly in the UI, stays consistent when the user opens several tabs, and syncs to **your backend** when you wire up push/pull.
 
-**[Documentation](https://profyt.github.io/jubilant-journey/docs/)** · **[Live demo](https://profyt.github.io/jubilant-journey/)** · [Repo guides](#documentation)
+**[Documentation](https://profyt.github.io/jubilant-journey/docs/)** · **[Live demo](https://profyt.github.io/jubilant-journey/)** · **[REST starter](https://profyt.github.io/jubilant-journey/starter/)** · [Repo guides](#documentation) · [When vs Dexie](https://profyt.github.io/jubilant-journey/docs/guide/when-to-use)
 
 ## Who it's for
 

@@ -131,6 +131,7 @@ await db.syncNow(); // works while paused
 | Field | Meaning |
 |-------|---------|
 | `pending` | Ops waiting in sync queue |
+| `failed` | Ops marked with `failedReason` after a push conflict |
 | `lastSyncAt` | Timestamp of last successful sync |
 | `lastError` | Last error message or null |
 | `nextSyncAt` | Next auto-sync (debounce/backoff), or `null` |

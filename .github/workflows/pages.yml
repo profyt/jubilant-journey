@@ -46,12 +46,21 @@ jobs:
           npm ci
           npm run build
 
+      - name: Install and build REST starter
+        working-directory: examples/vite-react-rest-starter
+        env:
+          VITE_BASE: /jubilant-journey/starter/
+          VITE_STATIC_MOCK: '1'
+        run: |
+          npm ci
+          npm run build
+
       - name: Verify worker assets have no bare imports
         run: |
           set -euo pipefail
           shopt -s nullglob
           # Vite may hash worker chunks without "worker" in the name; scan all JS under assets except the main app bundle.
-          mapfile -t assets < <(find examples/vite-react-todos/dist/assets -name '*.js' ! -name 'index-*.js')
+          mapfile -t assets < <(find examples/vite-react-todos/dist/assets examples/vite-react-rest-starter/dist/assets -name '*.js' ! -name 'index-*.js' ! -name 'main-*.js')
           if [ "${#assets[@]}" -eq 0 ]; then
             echo "No worker assets found under dist/assets" >&2
             exit 1
@@ -64,25 +73,28 @@ jobs:
             echo "OK: $f"
           done
 
-      - name: Assemble Pages artifact (demo at / + docs at /docs/)
+      - name: Assemble Pages artifact (demo at / + starter at /starter/ + docs at /docs/)
         run: |
           set -euo pipefail
           rm -rf _pages
-          mkdir -p _pages/docs
+          mkdir -p _pages/docs _pages/starter
           # Demo owns the site root (keeps existing live demo URL stable).
           cp -a examples/vite-react-todos/dist/. _pages/
+          # REST starter under /starter/.
+          cp -a examples/vite-react-rest-starter/dist/. _pages/starter/
           # Docs under /docs/ (VitePress outDir contents).
           cp -a site/.vitepress/dist/. _pages/docs/
           # Agent / LLM crawler briefs at Pages root (and under /docs/ for convenience).
           cp llms.txt llms-full.txt _pages/
           cp llms.txt llms-full.txt _pages/docs/
           test -f _pages/index.html
+          test -f _pages/starter/index.html
           test -f _pages/docs/index.html
           test -f _pages/docs/ru/index.html
           test -f _pages/llms.txt
           test -f _pages/llms-full.txt
           echo "Assembled:"
-          find _pages -maxdepth 3 -type f \( -name 'index.html' -o -name '*.html' -o -name 'llms*.txt' \) | sort | head -60
+          find _pages -maxdepth 3 -type f \( -name 'index.html' -o -name '*.html' -o -name 'llms*.txt' \) | sort | head -80
 
       - uses: actions/upload-pages-artifact@v3
         with:

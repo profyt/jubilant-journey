@@ -4,39 +4,41 @@ import { useDatabase } from './db/DatabaseProvider.js';
 import { AGENTS, useLiveAgents } from './db/useLiveAgents.js';
 import { useTodos } from './db/useTodos.js';
 import type { TodoStatus } from './db/schema.js';
+import {
+  detectLocale,
+  messages,
+  persistLocale,
+  type Locale,
+} from './i18n.js';
+import { ConflictPanel } from './ConflictPanel.js';
 
 type Filter = TodoStatus | 'all';
 
 export function App() {
   const { error, syncStatus } = useDatabase();
+  const [locale, setLocale] = useState<Locale>(() => detectLocale());
   const [filter, setFilter] = useState<Filter>('all');
   const [title, setTitle] = useState('');
   const [pulse, setPulse] = useState(false);
   const { todos, loading, addTodo, toggleTodo, removeTodo, syncNow } =
     useTodos(filter);
-  const live = useLiveAgents();
+  const live = useLiveAgents(locale);
+  const t = messages[locale];
+
+  useEffect(() => {
+    persistLocale(locale);
+    document.documentElement.lang = locale;
+    document.title = t.pageTitle;
+    const meta = document.querySelector('meta[name="description"]');
+    if (meta) meta.setAttribute('content', t.metaDescription);
+  }, [locale, t]);
 
   useEffect(() => {
     if (!syncStatus) return;
     setPulse(true);
-    const t = window.setTimeout(() => setPulse(false), 600);
-    return () => window.clearTimeout(t);
+    const timer = window.setTimeout(() => setPulse(false), 600);
+    return () => window.clearTimeout(timer);
   }, [syncStatus?.pending, syncStatus?.lastSyncAt]);
-
-  if (error) {
-    return (
-      <div className="shell">
-        <div className="boot-error">
-          <p className="boot-error__title">Could not start the local database</p>
-          <p>{error}</p>
-          <p className="boot-error__hint">
-            If you run from source, build the library at the repo root:{' '}
-            <code>npm run build</code>.
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   const base = import.meta.env.BASE_URL;
   // On Pages, docs live under /docs/ next to this demo; locally base is `/`.
@@ -44,14 +46,33 @@ export function App() {
     base === '/' || base === './'
       ? 'https://profyt.github.io/jubilant-journey/docs/'
       : `${base}docs/`;
-  // Prefer Russian docs when the browser locale is Russian (VitePress: /ru/).
-  const docsLocale =
-    typeof navigator !== 'undefined' &&
-    /^ru\b/i.test(navigator.language || '')
-      ? 'ru/'
-      : '';
+  const docsLocale = locale === 'ru' ? 'ru/' : '';
   const docsHome = `${docsRoot}${docsLocale}`;
   const docsExamples = `${docsRoot}${docsLocale}examples/typescript`;
+  const starterHome =
+    base === '/' || base === './'
+      ? 'https://profyt.github.io/jubilant-journey/starter/'
+      : `${base}starter/`;
+
+  if (error) {
+    return (
+      <div className="shell">
+        <div className="boot-error">
+          <p className="boot-error__title">{t.bootTitle}</p>
+          <p>{error}</p>
+          <p className="boot-error__hint">
+            {t.bootHint} <code>npm run build</code>.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const filterLabels: Record<Filter, string> = {
+    all: t.filterAll,
+    open: t.filterOpen,
+    done: t.filterDone,
+  };
 
   return (
     <div className="shell">
@@ -75,40 +96,60 @@ export function App() {
         </svg>
       </div>
 
-      <nav className="site-nav" aria-label="Site">
+      <nav className="site-nav" aria-label={t.navAria}>
         <a className="site-nav__brand" href={docsHome}>
           worker-sync-db
         </a>
         <div className="site-nav__links">
-          <a href={docsHome}>Docs</a>
-          <a href={docsExamples}>Examples</a>
+          <a href={docsHome}>{t.navDocs}</a>
+          <a href={docsExamples}>{t.navExamples}</a>
           <a href={import.meta.env.BASE_URL} aria-current="page">
-            Demo
+            {t.navDemo}
           </a>
+          <a href={starterHome}>{t.navStarter}</a>
           <a
             href="https://github.com/profyt/jubilant-journey"
             target="_blank"
             rel="noreferrer"
           >
-            GitHub
+            {t.navGitHub}
           </a>
+          <div
+            className="site-nav__lang"
+            role="group"
+            aria-label={t.langSwitcherAria}
+          >
+            <button
+              type="button"
+              className={locale === 'en' ? 'is-active' : ''}
+              aria-pressed={locale === 'en'}
+              onClick={() => setLocale('en')}
+            >
+              EN
+            </button>
+            <button
+              type="button"
+              className={locale === 'ru' ? 'is-active' : ''}
+              aria-pressed={locale === 'ru'}
+              onClick={() => setLocale('ru')}
+            >
+              RU
+            </button>
+          </div>
         </div>
       </nav>
 
       <div className="stage">
         <header className="hero">
           <p className="hero__brand">worker-sync-db</p>
-          <h1 className="hero__headline">One database. Every tab. Offline-first.</h1>
-          <p className="hero__lede">
-            Edits save in a SharedWorker, every open tab stays in sync, and a mock
-            remote adapter shows push/pull without leaving the page.
-          </p>
+          <h1 className="hero__headline">{t.heroHeadline}</h1>
+          <p className="hero__lede">{t.heroLede}</p>
           <div className="hero__cta">
             <a className="btn btn--primary" href="#swarm">
-              Watch live agents
+              {t.ctaWatchAgents}
             </a>
             <a className="btn btn--ghost" href={docsHome}>
-              Documentation
+              {t.ctaDocs}
             </a>
             <a
               className="btn btn--ghost"
@@ -116,36 +157,38 @@ export function App() {
               target="_blank"
               rel="noreferrer"
             >
-              GitHub
+              {t.navGitHub}
             </a>
           </div>
-          <p className="hero__hint">
-            Tip: open this URL in a second tab — adds and toggles mirror instantly.
-          </p>
+          <p className="hero__hint">{t.heroHint}</p>
         </header>
 
         <main id="playground" className="playground">
           <div className="playground__chrome">
             <div className="playground__head">
-              <h2>Live todos</h2>
-              <p>
-                Add or complete tasks — they persist offline. Agents below also write
-                here through the same worker DB.
-              </p>
+              <h2>{t.todosTitle}</h2>
+              <p>{t.todosLede}</p>
             </div>
 
             <div className={`status ${pulse ? 'status--pulse' : ''}`}>
               <span
                 className={`status__dot ${syncStatus?.online === false ? 'is-offline' : ''}`}
-                title={syncStatus?.online === false ? 'Offline' : 'Online'}
+                title={
+                  syncStatus?.online === false ? t.statusOffline : t.statusOnline
+                }
               />
-              <span>Pending: {syncStatus?.pending ?? '—'}</span>
+              <span>
+                {t.statusPending}: {syncStatus?.pending ?? '—'}
+              </span>
               {syncStatus?.lastSyncAt ? (
                 <span>
-                  Last sync: {new Date(syncStatus.lastSyncAt).toLocaleTimeString()}
+                  {t.statusLastSync}:{' '}
+                  {new Date(syncStatus.lastSyncAt).toLocaleTimeString(
+                    locale === 'ru' ? 'ru-RU' : 'en-US',
+                  )}
                 </span>
               ) : (
-                <span>Not synced yet</span>
+                <span>{t.statusNotSynced}</span>
               )}
               {syncStatus?.lastError && (
                 <span className="status__error">{syncStatus.lastError}</span>
@@ -155,7 +198,7 @@ export function App() {
                 className="btn btn--small"
                 onClick={() => void syncNow()}
               >
-                Sync now
+                {t.syncNow}
               </button>
             </div>
 
@@ -168,22 +211,22 @@ export function App() {
             >
               <input
                 type="text"
-                placeholder="What should stay in sync?"
+                placeholder={t.composerPlaceholder}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 disabled={loading && todos.length === 0}
-                aria-label="New todo title"
+                aria-label={t.composerAria}
               />
               <button
                 type="submit"
                 className="btn btn--primary"
                 disabled={!title.trim()}
               >
-                Add
+                {t.add}
               </button>
             </form>
 
-            <div className="filters" role="tablist" aria-label="Filter todos">
+            <div className="filters" role="tablist" aria-label={t.filterAria}>
               {(['all', 'open', 'done'] as const).map((f) => (
                 <button
                   key={f}
@@ -193,7 +236,7 @@ export function App() {
                   className={filter === f ? 'is-active' : ''}
                   onClick={() => setFilter(f)}
                 >
-                  {f}
+                  {filterLabels[f]}
                 </button>
               ))}
             </div>
@@ -201,11 +244,9 @@ export function App() {
 
           <div className="playground__list">
             {loading && todos.length === 0 ? (
-              <p className="empty">Loading…</p>
+              <p className="empty">{t.loading}</p>
             ) : todos.length === 0 ? (
-              <p className="empty">
-                No todos yet — add one, or let agents start writing.
-              </p>
+              <p className="empty">{t.emptyTodos}</p>
             ) : (
               <ul className="todo-list">
                 {todos.map((todo, index) => (
@@ -226,9 +267,9 @@ export function App() {
                       type="button"
                       className="todo-list__remove"
                       onClick={() => void removeTodo(todo.id)}
-                      aria-label={`Delete ${todo.title}`}
+                      aria-label={t.deleteAria(todo.title)}
                     >
-                      Remove
+                      {t.remove}
                     </button>
                   </li>
                 ))}
@@ -238,32 +279,30 @@ export function App() {
         </main>
       </div>
 
+      <ConflictPanel t={t} locale={locale} />
+
       <section id="swarm" className="swarm" aria-labelledby="swarm-title">
         <div className="swarm__intro">
-          <h2 id="swarm-title">Sync swarm</h2>
-          <p>
-            Simulated peers write through the real SharedWorker database, flush the
-            mock remote on a timer, and pull seeded server changes — watch the
-            activity stream move without clicking.
-          </p>
+          <h2 id="swarm-title">{t.swarmTitle}</h2>
+          <p>{t.swarmLede}</p>
         </div>
 
         <div className="swarm__meter" aria-live="polite">
           <div className="swarm__stat">
-            <span className="swarm__stat-label">Live events</span>
+            <span className="swarm__stat-label">{t.statEvents}</span>
             <span className="swarm__stat-value">{live.eventCount}</span>
           </div>
           <div className="swarm__stat">
-            <span className="swarm__stat-label">Open todos</span>
+            <span className="swarm__stat-label">{t.statOpen}</span>
             <span className="swarm__stat-value">{live.openCount}</span>
           </div>
           <div className="swarm__stat">
-            <span className="swarm__stat-label">Pending sync</span>
+            <span className="swarm__stat-label">{t.statPending}</span>
             <span className="swarm__stat-value">
               {live.syncStatus?.pending ?? '—'}
             </span>
           </div>
-          <div className="swarm__agents" aria-label="Agents">
+          <div className="swarm__agents" aria-label={t.agentsAria}>
             {AGENTS.map((agent) => (
               <span
                 key={agent.id}
@@ -284,7 +323,7 @@ export function App() {
             className="btn btn--ghost btn--small"
             onClick={() => live.setRunning((v) => !v)}
           >
-            {live.running ? 'Pause swarm' : 'Resume swarm'}
+            {live.running ? t.pauseSwarm : t.resumeSwarm}
           </button>
         </div>
 
@@ -296,9 +335,9 @@ export function App() {
 
         <ol className="swarm__feed">
           {live.activityLoading && live.activities.length === 0 ? (
-            <li className="swarm__feed-empty">Booting agent stream…</li>
+            <li className="swarm__feed-empty">{t.feedBooting}</li>
           ) : live.activities.length === 0 ? (
-            <li className="swarm__feed-empty">Waiting for the first write…</li>
+            <li className="swarm__feed-empty">{t.feedWaiting}</li>
           ) : (
             live.activities.map((row, index) => (
               <li
@@ -307,7 +346,9 @@ export function App() {
                 style={{ animationDelay: `${index * 30}ms` }}
               >
                 <time dateTime={new Date(row.at).toISOString()}>
-                  {new Date(row.at).toLocaleTimeString()}
+                  {new Date(row.at).toLocaleTimeString(
+                    locale === 'ru' ? 'ru-RU' : 'en-US',
+                  )}
                 </time>
                 <span className="swarm__row-agent">{row.agent}</span>
                 <span className="swarm__row-msg">{row.message}</span>
@@ -319,7 +360,7 @@ export function App() {
 
       <footer className="footer">
         <span>
-          MIT · npm package <code>worker-sync-db</code>
+          {t.footer} <code>worker-sync-db</code>
         </span>
       </footer>
     </div>

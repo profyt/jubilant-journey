@@ -7,8 +7,9 @@
   --wsd-teal: #0d7377;
   --wsd-teal-deep: #095456;
 
-  --vp-font-family-base: 'Figtree', 'Segoe UI', sans-serif;
+  --vp-font-family-base: 'Manrope', 'Noto Sans', sans-serif;
   --vp-font-family-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --wsd-font-display: 'Unbounded', 'Manrope', sans-serif;
 
   --vp-c-brand-1: var(--wsd-teal);
   --vp-c-brand-2: var(--wsd-teal-deep);
@@ -112,14 +113,14 @@ html {
 
 .VPNavBar .title,
 .VPNavBarTitle .title {
-  font-family: 'Syne', Georgia, serif;
+  font-family: var(--wsd-font-display);
   font-weight: 700;
   letter-spacing: -0.02em;
 }
 
 .VPHero .name,
 .VPHero .text {
-  font-family: 'Syne', Georgia, serif;
+  font-family: var(--wsd-font-display);
   letter-spacing: -0.03em;
 }
 
@@ -136,7 +137,7 @@ html {
 .vp-doc h1,
 .vp-doc h2,
 .vp-doc h3 {
-  font-family: 'Syne', Georgia, serif;
+  font-family: var(--wsd-font-display);
   letter-spacing: -0.02em;
   font-weight: 700;
 }

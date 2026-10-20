@@ -2,6 +2,9 @@
 
 Minimal **Vite + React + TypeScript** app that wires `worker-sync-db` to a **fetch sync** backend with **auth headers**.
 
+**Hosted (static mock sync):** [https://profyt.github.io/jubilant-journey/starter/](https://profyt.github.io/jubilant-journey/starter/)  
+Local Vite middleware still provides real `/api/sync/*` + Bearer auth for learning the fetch contract.
+
 ## Run
 
 From the library repo root:

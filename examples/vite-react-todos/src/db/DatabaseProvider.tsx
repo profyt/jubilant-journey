@@ -2,6 +2,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -14,15 +15,19 @@ import {
 import { mockAdapter } from '../sync/mockAdapter.js';
 import { schema } from './schema.js';
 import { dedicatedWorkerUrl, sharedWorkerUrl } from './workers.js';
+import { ConflictLogProvider, useConflictLog } from './ConflictLog.js';
 
 export type AppDatabase = DatabaseClient<typeof schema>;
 
 const DB_NAME = 'vite-react-todos';
 const BootErrorContext = createContext<string | null>(null);
 
-export function DatabaseProvider({ children }: { children: ReactNode }) {
+function DatabaseBoot({ children }: { children: ReactNode }) {
   const [db, setDb] = useState<AppDatabase | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const conflicts = useConflictLog();
+  const recordRef = useRef(conflicts.record);
+  recordRef.current = conflicts.record;
 
   useEffect(() => {
     let disposed = false;
@@ -38,6 +43,7 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
           dedicatedWorker: dedicatedWorkerUrl,
           remote: mockAdapter,
           onConflict: (conflict) => {
+            recordRef.current(conflict);
             if (conflict.kind === 'push') {
               console.warn('[sync conflict]', conflict.opId, conflict.reason);
             } else {
@@ -75,6 +81,14 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
     <WsdProvider db={db}>
       <BootErrorContext.Provider value={error}>{children}</BootErrorContext.Provider>
     </WsdProvider>
+  );
+}
+
+export function DatabaseProvider({ children }: { children: ReactNode }) {
+  return (
+    <ConflictLogProvider>
+      <DatabaseBoot>{children}</DatabaseBoot>
+    </ConflictLogProvider>
   );
 }
 

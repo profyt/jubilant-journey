@@ -1,6 +1,6 @@
 :root {
   color-scheme: light;
-  font-family: 'Segoe UI', ui-sans-serif, system-ui, sans-serif;
+  font-family: 'Manrope', 'Noto Sans', sans-serif;
   line-height: 1.45;
   --ink: #14213d;
   --muted: #5c6b7a;
@@ -41,13 +41,29 @@ body {
 
 h1 {
   margin: 0.35rem 0 0.5rem;
+  font-family: 'Unbounded', 'Manrope', sans-serif;
   font-size: 2rem;
   letter-spacing: -0.02em;
 }
 
 .lede {
-  margin: 0 0 1.5rem;
+  margin: 0 0 1rem;
   color: var(--muted);
+}
+
+.nav-links {
+  margin: 0 0 1.5rem;
+  font-size: 0.92rem;
+}
+
+.nav-links a {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.nav-links a:hover {
+  text-decoration: underline;
 }
 
 .lede code {
