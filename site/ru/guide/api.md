@@ -67,6 +67,14 @@ delete<C extends keyof S & string>(
 
 Soft-delete (`_deleted: true`). Возвращает обновлённый документ или бросает `NotFound`.
 
+### `batch(ops)`
+
+```typescript
+batch(ops: BatchOp[]): Promise<BatchResultItem[]>;
+```
+
+Несколько `put`/`delete` по разным коллекциям в **одной транзакции IndexedDB**. Отсутствующие id при delete пропускаются. Сторы должны уже быть в схеме (открываются заранее). Soft-delete и last-write-wins — не CRDT. Для массовой записи в одну коллекцию лучше `putMany` / `deleteMany`.
+
 ### `query(collection, opts?)`
 
 ```typescript
