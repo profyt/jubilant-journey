@@ -4,6 +4,7 @@ import type {
   SyncConfig,
 } from '../shared/protocol.js';
 import type {
+  Conflict,
   FetchSyncConfig,
   PendingOp,
   RemoteChange,
@@ -32,7 +33,7 @@ export class RemoteSync {
 
   private syncConfig: SyncConfig | null = null;
   private syncing = false;
-  private onConflict?: (conflict: { opId: string; reason: string }) => void;
+  private onConflict?: (conflict: Conflict) => void;
   private readonly delegateWaiters = new Map<
     string,
     {
@@ -90,9 +91,7 @@ export class RemoteSync {
     return this.syncConfig !== null;
   }
 
-  setOnConflict(
-    handler: ((conflict: { opId: string; reason: string }) => void) | undefined,
-  ): void {
+  setOnConflict(handler: ((conflict: Conflict) => void) | undefined): void {
     this.onConflict = handler;
   }
 
@@ -259,7 +258,11 @@ export class RemoteSync {
       }
       const pushBody = (await pushRes.json()) as PushResult;
       for (const conflict of pushBody.conflicts ?? []) {
-        this.emitConflict(conflict);
+        this.emitConflict({
+          kind: 'push',
+          opId: conflict.opId,
+          reason: conflict.reason,
+        });
       }
       await this.db.removePendingOps(pushBody.applied);
     }
@@ -287,7 +290,11 @@ export class RemoteSync {
     if (pending.length > 0) {
       const pushResult = await this.delegatePush(leader.clientId, pending);
       for (const conflict of pushResult.conflicts ?? []) {
-        this.emitConflict(conflict);
+        this.emitConflict({
+          kind: 'push',
+          opId: conflict.opId,
+          reason: conflict.reason,
+        });
       }
       await this.db.removePendingOps(pushResult.applied);
     }
@@ -298,7 +305,7 @@ export class RemoteSync {
     await this.db.setCursor(pullResult.nextCursor);
   }
 
-  private emitConflict(conflict: { opId: string; reason: string }): void {
+  private emitConflict(conflict: Conflict): void {
     this.onConflict?.(conflict);
     this.registry.broadcast({
       kind: 'conflict',
@@ -308,7 +315,21 @@ export class RemoteSync {
 
   private async applyAndBroadcast(changes: RemoteChange[]): Promise<void> {
     for (const change of changes) {
-      const { doc, applied } = await this.db.applyRemoteChange(change);
+      const { doc, applied, lww } = await this.db.applyRemoteChange(change);
+      if (lww) {
+        this.emitConflict({
+          kind: 'lww',
+          collection: change.collection,
+          id: String(doc.id),
+          outcome: lww.outcome,
+          local: lww.local,
+          remote: lww.remote,
+          reason:
+            lww.outcome === 'local-wins'
+              ? 'local document wins last-write-wins'
+              : 'remote document applied over local (last-write-wins)',
+        });
+      }
       if (!applied) continue;
       const isDelete = change.kind === 'delete' || Boolean(doc._deleted);
       this.registry.broadcastChange({
