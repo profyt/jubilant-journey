@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Docs: schema migrations / semver checklist (`docs/migrations.md`)
 - Persistence stress tests: large queue, reload mid-sync, soft large-payload check
 - `getDiagnostics()` — worker mode, cross-tab transport, queue depth, last sync error
 - Optimistic UI helpers: `createTempId` / `isTempId` / `withOptimisticPut` (+ docs pattern; LWW, not CRDT)
