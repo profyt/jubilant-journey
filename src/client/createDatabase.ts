@@ -1,4 +1,6 @@
 import type {
+  BatchOp,
+  BatchResultItem,
   ChangeEventPayload,
   QueryFilter,
   SyncConfig,
@@ -82,6 +84,11 @@ export interface DatabaseClient<S extends CollectionSchema> {
   ): Promise<InferDoc<S, C>[]>;
   /** Soft-delete all non-deleted documents in the collection. */
   clear<C extends keyof S & string>(collection: C): Promise<InferDoc<S, C>[]>;
+  /**
+   * Apply put/delete ops across collections in one IndexedDB transaction.
+   * Missing delete targets are skipped. See docs for IDB limits.
+   */
+  batch(ops: BatchOp[]): Promise<BatchResultItem[]>;
   query<C extends keyof S & string>(
     collection: C,
     opts?: QueryOptions,
@@ -97,6 +104,10 @@ export interface DatabaseClient<S extends CollectionSchema> {
   ): () => void;
   syncNow(): Promise<SyncStatus>;
   getSyncStatus(): Promise<SyncStatus>;
+  /** Suspend automatic sync (debounce/backoff). `syncNow()` still runs. */
+  pauseSync(): Promise<SyncStatus>;
+  /** Resume automatic sync and schedule a near-immediate attempt when online. */
+  resumeSync(): Promise<SyncStatus>;
   onSyncStatusChange(listener: (status: SyncStatus) => void): () => void;
   close(): void;
 }
@@ -299,6 +310,13 @@ function createClientFromBridge<S extends CollectionSchema>(
       }) as Promise<InferDoc<S, typeof collection>[]>;
     },
 
+    async batch(ops) {
+      return bridge.call({
+        type: 'batch',
+        ops,
+      }) as Promise<BatchResultItem[]>;
+    },
+
     async query(collection, opts = {}) {
       const { filter, orderBy, limit, ...idbOpts } = opts;
       const deferLimit = Boolean(filter || orderBy);
@@ -357,6 +375,14 @@ function createClientFromBridge<S extends CollectionSchema>(
 
     async getSyncStatus() {
       return bridge.call({ type: 'getSyncStatus' }) as Promise<SyncStatus>;
+    },
+
+    async pauseSync() {
+      return bridge.call({ type: 'pauseSync' }) as Promise<SyncStatus>;
+    },
+
+    async resumeSync() {
+      return bridge.call({ type: 'resumeSync' }) as Promise<SyncStatus>;
     },
 
     onSyncStatusChange(listener) {

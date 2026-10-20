@@ -19,7 +19,7 @@ function createDatabase<S extends CollectionSchema>(
 | `mode` | `'auto' \| 'shared' \| 'dedicated'` | no | Default `'auto'` |
 | `crossTabFallback` | `'auto' \| 'broadcast-channel' \| 'none'` | no | Default `'auto'`: in dedicated mode, relay live changes via `BroadcastChannel` |
 | `remote` | `RemoteSyncAdapter \| FetchSyncConfig` | no | Enables sync |
-| `onConflict` | `(conflict) => void` | no | Push conflicts (delegate adapter) |
+| `onConflict` | `(conflict) => void` | no | Push conflict inspect hook (delegate + fetch; LWW still applies) |
 
 Throws if `window` is undefined (SSR).
 
@@ -110,6 +110,39 @@ Soft-deletes **all non-deleted** documents in the collection (same semantics as 
 
 ---
 
+### `batch(ops)`
+
+```typescript
+batch(ops: BatchOp[]): Promise<BatchResultItem[]>;
+
+type BatchOp =
+  | { type: 'put'; collection: string; doc: Record<string, unknown> & { id: string } }
+  | { type: 'delete'; collection: string; id: string };
+
+type BatchResultItem = {
+  type: 'put' | 'delete';
+  collection: string;
+  id: string;
+  doc: DocumentMeta & Record<string, unknown>;
+};
+```
+
+Apply put/delete ops across **one or more collections** in a **single IndexedDB transaction**. Enqueues one sync op per applied write when `remote` is set. Broadcasts a change event per applied op after commit.
+
+**Semantics**
+
+- Missing delete targets are **skipped** (same as `deleteMany`); they do not appear in the result array.
+- Soft-delete model and last-write-wins meta (`_version` / `_updatedAt`) — not a CRDT.
+- Empty `ops` → `[]`.
+
+**IndexedDB limits (honest)**
+
+- All object stores used by the batch must already exist in the schema; stores are opened **upfront** (IDB cannot open additional stores mid-transaction).
+- No nested transactions; one atomic commit for the whole batch (or full abort on storage error).
+- Prefer `putMany` / `deleteMany` for large single-collection bulk writes.
+
+---
+
 ### `query(collection, opts?)`
 
 ```typescript
@@ -196,8 +229,19 @@ interface SyncStatus {
   online: boolean;
   /** Next debounced / backoff auto-sync (epoch ms), or null */
   nextSyncAt: number | null;
+  /** User pause — auto-sync suspended; `syncNow()` still runs */
+  paused: boolean;
 }
 ```
+
+### `pauseSync()` / `resumeSync()`
+
+```typescript
+pauseSync(): Promise<SyncStatus>;
+resumeSync(): Promise<SyncStatus>;
+```
+
+Suspend or resume **automatic** sync (debounce / backoff). Explicit `syncNow()` still runs while paused.
 
 ---
 
