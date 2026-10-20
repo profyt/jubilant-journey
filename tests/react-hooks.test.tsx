@@ -27,6 +27,7 @@ function createMockDb(initial: Array<Record<string, unknown> & { id: string }> =
     async getSyncStatus() {
       return {
         pending: 2,
+        failed: 0,
         lastSyncAt: null,
         lastError: null,
         online: true,
@@ -37,6 +38,7 @@ function createMockDb(initial: Array<Record<string, unknown> & { id: string }> =
     onSyncStatusChange(listener: (s: unknown) => void) {
       listener({
         pending: 2,
+        failed: 0,
         lastSyncAt: null,
         lastError: null,
         online: true,

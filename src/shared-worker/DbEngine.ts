@@ -516,6 +516,21 @@ export class DbEngine {
     await tx.done;
   }
 
+  /** Mark pending ops as failed (push conflict) without removing them. */
+  async markPendingOpsFailed(
+    failures: Array<{ opId: string; reason: string }>,
+  ): Promise<void> {
+    if (failures.length === 0) return;
+    const db = this.requireDb();
+    const tx = db.transaction(SYNC_QUEUE_STORE, 'readwrite');
+    for (const { opId, reason } of failures) {
+      const existing = (await tx.store.get(opId)) as PendingOp | undefined;
+      if (!existing) continue;
+      await tx.store.put({ ...existing, failedReason: reason });
+    }
+    await tx.done;
+  }
+
   async getCursor(): Promise<string | null> {
     const db = this.requireDb();
     const row = (await db.get(META_STORE, CURSOR_KEY)) as

@@ -224,6 +224,8 @@ getSyncStatus(): Promise<SyncStatus>;
 ```typescript
 interface SyncStatus {
   pending: number;
+  /** Ops with `failedReason` after a push conflict */
+  failed: number;
   lastSyncAt: number | null;
   lastError: string | null;
   online: boolean;
@@ -233,6 +235,18 @@ interface SyncStatus {
   paused: boolean;
 }
 ```
+
+### `getPendingOps()` / `discardPendingOps()` / `discardFailedOps()`
+
+```typescript
+getPendingOps(): Promise<PendingOp[]>;
+discardPendingOps(opIds?: string[]): Promise<SyncStatus>;
+discardFailedOps(): Promise<SyncStatus>;
+```
+
+- `getPendingOps()` — inspect the sync queue (`failedReason` set after push conflicts).
+- `discardPendingOps(opIds?)` — remove specific ops, or clear the whole queue when `opIds` is omitted/empty.
+- `discardFailedOps()` — remove only conflict-marked ops; retry the rest with `syncNow()`.
 
 ### `pauseSync()` / `resumeSync()`
 

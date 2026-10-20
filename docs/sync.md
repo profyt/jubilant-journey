@@ -166,6 +166,7 @@ Subscribe for UI indicators (queue depth, next attempt, pause):
 db.onSyncStatusChange((status) => {
   console.log({
     queueDepth: status.pending,
+    failed: status.failed,
     nextSyncAt: status.nextSyncAt,
     paused: status.paused,
     online: status.online,
@@ -175,12 +176,19 @@ db.onSyncStatusChange((status) => {
 
 await db.pauseSync();   // stop debounce / backoff
 await db.resumeSync();  // schedule soon when online
-await db.syncNow();     // still works while paused
+await db.syncNow();     // still works while paused — also the retry path
+
+// After push conflicts (ops stay queued with failedReason):
+const pending = await db.getPendingOps();
+await db.discardFailedOps();           // drop conflicted ops
+await db.discardPendingOps(['op-id']); // or drop specific / all
+await db.syncNow();                    // retry remaining
 ```
 
 | Field | Meaning |
 |-------|---------|
 | `pending` | Ops waiting in sync queue (queue depth) |
+| `failed` | Subset of pending with `failedReason` after a push conflict |
 | `lastSyncAt` | Timestamp of last successful sync |
 | `lastError` | Last error message or null |
 | `nextSyncAt` | Epoch ms when the next auto-sync (debounce/backoff) will run, or `null` |
