@@ -148,7 +148,8 @@ export default defineConfig({
     [
       'link',
       {
-        href: 'https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap',
+        // Unbounded + Manrope both ship Cyrillic; Syne/Figtree do not (RU fell back to system UI).
+        href: 'https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&family=Unbounded:wght@600;700;800&display=swap',
         rel: 'stylesheet',
       },
     ],
