@@ -199,6 +199,23 @@ interface SyncStatus {
 
 ---
 
+### `getDiagnostics()`
+
+```typescript
+getDiagnostics(): Promise<DatabaseDiagnostics>;
+```
+
+Read-only health snapshot:
+
+| Field | Source |
+|-------|--------|
+| `workerMode` | Resolved `shared` / `dedicated` |
+| `crossTabTransport` | `shared-worker` / `broadcast-channel` / `none` |
+| `queueDepth` / `pending` | Sync queue length |
+| `lastSyncAt` / `lastError` / `nextSyncAt` / `online` | Same as `getSyncStatus()` |
+
+---
+
 ### `onSyncStatusChange(listener)`
 
 ```typescript

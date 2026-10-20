@@ -75,7 +75,7 @@ Called during SSR or in Node tests without `window`. Initialize only in `useEffe
 
 ## Sync never completes / `pending` stays high
 
-1. Check `status.lastError` via `getSyncStatus()`.
+1. Check `await db.getDiagnostics()` (worker mode, transport, `queueDepth`, `lastError`) or `getSyncStatus()`.
 2. Verify leader tab is open (delegate mode).
 3. Confirm push returns `applied` opIds matching queued `opId`s.
 4. Network offline: `status.online === false` until `online` event.

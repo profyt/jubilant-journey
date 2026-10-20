@@ -6,6 +6,7 @@ export type {
   CrossTabFallback,
   CrossTabTransport,
   DatabaseClient,
+  DatabaseDiagnostics,
   RemoteConfig,
   WorkerMode,
 } from './client/createDatabase.js';

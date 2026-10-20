@@ -28,6 +28,19 @@ export type CrossTabFallback = 'none' | 'broadcast-channel' | 'auto';
 
 export type CrossTabTransport = 'shared-worker' | 'broadcast-channel' | 'none';
 
+/** Snapshot for debugging worker / sync health (read-only). */
+export type DatabaseDiagnostics = {
+  workerMode: 'shared' | 'dedicated';
+  crossTabTransport: CrossTabTransport;
+  /** Alias of `pending` — ops waiting in the sync queue. */
+  queueDepth: number;
+  pending: number;
+  lastSyncAt: number | null;
+  lastError: string | null;
+  nextSyncAt: number | null;
+  online: boolean;
+};
+
 export type RemoteConfig = RemoteSyncAdapter | FetchSyncConfig;
 
 export interface CreateDatabaseOptions<S extends CollectionSchema> {
@@ -96,6 +109,8 @@ export interface DatabaseClient<S extends CollectionSchema> {
   ): () => void;
   syncNow(): Promise<SyncStatus>;
   getSyncStatus(): Promise<SyncStatus>;
+  /** Worker mode, cross-tab transport, queue depth, last sync error. */
+  getDiagnostics(): Promise<DatabaseDiagnostics>;
   onSyncStatusChange(listener: (status: SyncStatus) => void): () => void;
   close(): void;
 }
@@ -345,6 +360,22 @@ function createClientFromBridge<S extends CollectionSchema>(
 
     async getSyncStatus() {
       return bridge.call({ type: 'getSyncStatus' }) as Promise<SyncStatus>;
+    },
+
+    async getDiagnostics() {
+      const status = await bridge.call({
+        type: 'getSyncStatus',
+      }) as SyncStatus;
+      return {
+        workerMode: meta.workerMode,
+        crossTabTransport: transport,
+        queueDepth: status.pending,
+        pending: status.pending,
+        lastSyncAt: status.lastSyncAt,
+        lastError: status.lastError,
+        nextSyncAt: status.nextSyncAt,
+        online: status.online,
+      } satisfies DatabaseDiagnostics;
     },
 
     onSyncStatusChange(listener) {
