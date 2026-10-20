@@ -154,9 +154,10 @@ On pull, when a remote change competes with an existing local doc, `onConflict` 
 
 `nextCursor` is stored in IndexedDB meta and sent on the next pull.
 
-## Mock adapter (example app)
+## Mock adapter / REST starter
 
-The React example uses an in-memory adapter with artificial delay — see [examples/vite-react-todos/src/sync/mockAdapter.ts](../examples/vite-react-todos/src/sync/mockAdapter.ts).
+- Full demo (delegate mock): [examples/vite-react-todos/src/sync/mockAdapter.ts](../examples/vite-react-todos/src/sync/mockAdapter.ts)
+- **REST + auth headers starter:** [examples/vite-react-rest-starter](../examples/vite-react-rest-starter) — `FetchSyncConfig` with `Authorization` and a Vite mock `/api/sync/*`
 
 ## SyncStatus
 

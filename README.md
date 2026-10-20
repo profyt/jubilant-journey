@@ -129,6 +129,16 @@ npm run example:dev
 
 Open http://localhost:5173 in two tabs to see cross-tab updates. Source: [examples/vite-react-todos](examples/vite-react-todos).
 
+**REST + auth headers starter** (smaller copy-paste app):
+
+```bash
+npm run build
+npm run example:starter:install
+npm run example:starter:dev
+```
+
+→ http://localhost:5174 — [examples/vite-react-rest-starter](examples/vite-react-rest-starter).
+
 ## Browser & environment
 
 - **Browser only** — `createDatabase` needs `window` (not for SSR)

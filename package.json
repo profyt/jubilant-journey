@@ -54,6 +54,10 @@
     "example:dev": "npm run dev --prefix examples/vite-react-todos",
     "example:build": "npm run build --prefix examples/vite-react-todos",
     "example:preview": "npm run preview --prefix examples/vite-react-todos",
+    "example:starter:install": "npm install --prefix examples/vite-react-rest-starter",
+    "example:starter:dev": "npm run dev --prefix examples/vite-react-rest-starter",
+    "example:starter:build": "npm run build --prefix examples/vite-react-rest-starter",
+
     "docs:dev": "npm run dev --prefix site",
     "docs:build": "npm run build --prefix site",
     "docs:preview": "npm run preview --prefix site",

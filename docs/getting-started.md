@@ -137,4 +137,5 @@ Call when unmounting a SPA root or logging out. Other tabs keep their connection
 - [sync.md](sync.md) — backend contract
 - [optimistic.md](optimistic.md) — temp ids / optimistic put pattern
 - [migrations.md](migrations.md) — schema change / semver checklist
-- [examples/vite-react-todos](../examples/vite-react-todos) — React demo
+- [examples/vite-react-todos](../examples/vite-react-todos) — full React demo
+- [examples/vite-react-rest-starter](../examples/vite-react-rest-starter) — Vite + React starter with REST sync + auth headers
