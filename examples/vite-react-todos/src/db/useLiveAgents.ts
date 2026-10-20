@@ -3,29 +3,13 @@ import { useQuery, useSubscribe } from 'worker-sync-db/react';
 import type { ActivityDoc, TodoDoc } from './schema.js';
 import { useDatabase } from './DatabaseProvider.js';
 import { seedRemoteTodo } from '../sync/mockAdapter.js';
+import { agentCopy, type Locale } from '../i18n.js';
 
 export const AGENTS = [
   { id: 'nova', name: 'Nova', hue: '#7dd3c0' },
   { id: 'rio', name: 'Rio', hue: '#f0a202' },
   { id: 'kai', name: 'Kai', hue: '#9ec1ff' },
 ] as const;
-
-const REMOTE_TITLES = [
-  'Ship changelog snippet',
-  'Reconcile offline queue',
-  'Warm SharedWorker cache',
-  'Index pending sync ops',
-  'Replay conflict resolution',
-];
-
-const LOCAL_TITLES = [
-  'Draft release notes',
-  'Probe multi-tab fan-out',
-  'Trim stale activity rows',
-  'Benchmark put latency',
-  'Verify soft-delete path',
-  'Pulse sync adapter',
-];
 
 function pick<T>(items: readonly T[]): T {
   return items[Math.floor(Math.random() * items.length)]!;
@@ -46,13 +30,15 @@ async function logActivity(
   });
 }
 
-export function useLiveAgents() {
+export function useLiveAgents(locale: Locale) {
   const { db, syncStatus } = useDatabase();
   const [running, setRunning] = useState(true);
   const [eventCount, setEventCount] = useState(0);
   const [lastPulse, setLastPulse] = useState<string | null>(null);
   const [activeAgent, setActiveAgent] = useState<string | null>(null);
   const tickRef = useRef(0);
+  const localeRef = useRef(locale);
+  localeRef.current = locale;
 
   const { data: activityData, loading: activityLoading } = useQuery(db, 'activity');
   const { data: todoData } = useQuery(db, 'todos');
@@ -81,6 +67,7 @@ export function useLiveAgents() {
 
   const agentWrite = useCallback(async () => {
     if (!db) return;
+    const copy = agentCopy[localeRef.current];
     const agent = pick(AGENTS);
     setActiveAgent(agent.name);
     const open = (await db.query('todos')).filter(
@@ -101,44 +88,46 @@ export function useLiveAgents() {
         db,
         agent.name,
         'agent_toggle',
-        `completed “${todo.title}”`,
+        copy.completed(todo.title),
       );
       return;
     }
 
-    const title = pick(LOCAL_TITLES);
+    const title = pick(copy.localTitles);
     await db.put('todos', {
       id: crypto.randomUUID(),
       title: `${agent.name}: ${title}`,
       status: 'open',
       agent: agent.id,
     });
-    await logActivity(db, agent.name, 'agent_write', `added “${title}”`);
+    await logActivity(db, agent.name, 'agent_write', copy.added(title));
   }, [db]);
 
   const remoteTick = useCallback(async () => {
     if (!db) return;
-    const title = pick(REMOTE_TITLES);
+    const copy = agentCopy[localeRef.current];
+    const title = pick(copy.remoteTitles);
     seedRemoteTodo(title, 'orbit');
     const status = await db.syncNow();
     await logActivity(
       db,
       'Orbit',
       'remote_pull',
-      `pulled remote “${title}” · pending ${status.pending}`,
+      copy.pulled(title, status.pending),
     );
   }, [db]);
 
   const syncTick = useCallback(async () => {
     if (!db) return;
+    const copy = agentCopy[localeRef.current];
     const status = await db.syncNow();
     await logActivity(
       db,
       'Sync',
       'sync',
       status.lastError
-        ? `error: ${status.lastError}`
-        : `flushed · pending ${status.pending}`,
+        ? copy.syncError(status.lastError)
+        : copy.flushed(status.pending),
     );
   }, [db]);
 
