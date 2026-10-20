@@ -101,10 +101,10 @@ export type SyncStatusEventPayload = {
   status: SyncStatus;
 };
 
-/** Push conflict from fetch-mode sync (worker → tabs). */
+/** Push or LWW inspect conflict (worker → tabs). */
 export type ConflictEventPayload = {
   kind: 'conflict';
-  conflict: { opId: string; reason: string };
+  conflict: import('../sync/RemoteSyncAdapter.js').Conflict;
 };
 
 export type SyncDelegateRequest =

@@ -20,7 +20,7 @@ function createDatabase<S extends CollectionSchema>(
 | `dedicatedWorker` | `string \| URL` | recommended | URL to dedicated-worker bundle |
 | `mode` | `'auto' \| 'shared' \| 'dedicated'` | no | Default `'auto'` |
 | `remote` | `RemoteSyncAdapter \| FetchSyncConfig` | no | Enables sync |
-| `onConflict` | `(conflict) => void` | no | Push conflicts (delegate adapter) |
+| `onConflict` | `(conflict: Conflict) => void` | no | Inspect push + pull LWW outcomes (default LWW; not CRDT) |
 
 Throws if `window` is undefined (SSR).
 

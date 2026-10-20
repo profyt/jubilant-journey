@@ -540,6 +540,12 @@ export class DbEngine {
   }): Promise<{
     doc: DocumentMeta & Record<string, unknown>;
     applied: boolean;
+    /** Present when an existing local doc participated in LWW. */
+    lww?: {
+      outcome: 'local-wins' | 'remote-applied';
+      local: DocumentMeta & Record<string, unknown>;
+      remote: DocumentMeta & Record<string, unknown>;
+    };
   }> {
     const db = this.requireDb();
     const { collection, doc, kind } = change;
@@ -548,20 +554,35 @@ export class DbEngine {
       | undefined;
 
     if (existing && existing._updatedAt > doc._updatedAt) {
-      return { doc: existing, applied: false };
+      return {
+        doc: existing,
+        applied: false,
+        lww: { outcome: 'local-wins', local: existing, remote: doc },
+      };
     }
     if (
       existing &&
       existing._updatedAt === doc._updatedAt &&
       existing._version >= doc._version
     ) {
-      return { doc: existing, applied: false };
+      return {
+        doc: existing,
+        applied: false,
+        lww: { outcome: 'local-wins', local: existing, remote: doc },
+      };
     }
 
     const toStore =
       kind === 'delete' ? { ...doc, _deleted: true } : { ...doc, _deleted: false };
 
     await db.put(collection, toStore);
+    if (existing) {
+      return {
+        doc: toStore,
+        applied: true,
+        lww: { outcome: 'remote-applied', local: existing, remote: doc },
+      };
+    }
     return { doc: toStore, applied: true };
   }
 }

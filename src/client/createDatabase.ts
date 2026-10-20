@@ -13,6 +13,7 @@ import type {
   QueryOptions,
 } from '../shared/schema.js';
 import type {
+  Conflict,
   FetchSyncConfig,
   RemoteSyncAdapter,
   SyncStatus,
@@ -61,7 +62,11 @@ export interface CreateDatabaseOptions<S extends CollectionSchema> {
    */
   crossTabFallback?: CrossTabFallback;
   remote?: RemoteConfig;
-  onConflict?: (conflict: { opId: string; reason: string }) => void;
+  /**
+   * Inspect hook for push conflicts and pull LWW outcomes.
+   * Does not change default last-write-wins behaviour (not a CRDT resolver).
+   */
+  onConflict?: (conflict: Conflict) => void;
 }
 
 export type ChangeEvent<T> = {

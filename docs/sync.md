@@ -55,8 +55,13 @@ const db = await createDatabase({
       return res.json();
     },
   },
-  onConflict: ({ opId, reason }) => {
-    console.warn('Conflict', opId, reason);
+  onConflict: (conflict) => {
+    if (conflict.kind === 'push') {
+      console.warn('Push conflict', conflict.opId, conflict.reason);
+    } else {
+      // LWW inspect — default strategy already applied; re-`put` to override.
+      console.warn('LWW', conflict.outcome, conflict.collection, conflict.id);
+    }
   },
 });
 ```
@@ -77,13 +82,18 @@ remote: {
     'X-Tenant-Id': tenantId,
   },
 },
-onConflict: ({ opId, reason }) => {
+onConflict: (conflict) => {
   // Inspect only — v1 is last-write-wins; no CRDT merge hook.
-  console.warn('Push conflict', opId, reason);
+  if (conflict.kind === 'push') {
+    console.warn('Push conflict', conflict.opId, conflict.reason);
+  } else if (conflict.outcome === 'remote-applied') {
+    // Optional “resolve”: write preferred fields again after inspect.
+    console.info('Remote overwrote local', conflict.id, conflict.local, conflict.remote);
+  }
 },
 ```
 
-HTTP runs inside the SharedWorker via `fetch()`. Push conflicts are broadcast as `conflict` events so `onConflict` runs in the app tab (same option as delegate mode).
+HTTP runs inside the SharedWorker via `fetch()`. Push and LWW inspect conflicts are broadcast as `conflict` events so `onConflict` runs in the app tab (same option as delegate mode).
 
 ## Backend contract
 
@@ -117,7 +127,9 @@ HTTP runs inside the SharedWorker via `fetch()`. Push conflicts are broadcast as
 }
 ```
 
-Applied `opId`s are removed from the local queue. Optional `conflicts` trigger `onConflict` (inspect hook — LWW still applies; this is not a CRDT resolver).
+Applied `opId`s are removed from the local queue. Optional push `conflicts` trigger `onConflict` with `{ kind: 'push', opId, reason }`.
+
+On pull, when a remote change competes with an existing local doc, `onConflict` also receives `{ kind: 'lww', outcome: 'local-wins' | 'remote-applied', collection, id, local, remote, reason }` **after** LWW has already decided. This is inspect-only (not a CRDT resolver); re-`put` if the app wants a different final value.
 
 ### Pull response
 

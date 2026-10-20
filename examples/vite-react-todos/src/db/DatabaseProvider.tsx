@@ -37,8 +37,17 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
           sharedWorker: sharedWorkerUrl,
           dedicatedWorker: dedicatedWorkerUrl,
           remote: mockAdapter,
-          onConflict: ({ opId, reason }) => {
-            console.warn('[sync conflict]', opId, reason);
+          onConflict: (conflict) => {
+            if (conflict.kind === 'push') {
+              console.warn('[sync conflict]', conflict.opId, conflict.reason);
+            } else {
+              console.warn(
+                '[lww]',
+                conflict.outcome,
+                conflict.collection,
+                conflict.id,
+              );
+            }
           },
         });
 

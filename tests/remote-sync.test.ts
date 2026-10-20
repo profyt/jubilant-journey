@@ -229,7 +229,115 @@ describe('RemoteSync', () => {
     expect(port.postMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         kind: 'conflict',
-        conflict: { opId, reason: 'version mismatch' },
+        conflict: { kind: 'push', opId, reason: 'version mismatch' },
+      }),
+    );
+  });
+
+  it('emits LWW inspect conflicts when pull skips or overwrites local', async () => {
+    const { doc: local } = await engine.put(
+      'items',
+      { id: '1', value: 'local' },
+      { enqueueSync: false },
+    );
+
+    const port = { postMessage: vi.fn() } as unknown as MessagePort;
+    const clientId = registry.register(port);
+    registry.subscribe(clientId, 'items');
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        changes: [
+          {
+            collection: 'items',
+            kind: 'put',
+            doc: {
+              id: '1',
+              value: 'older-remote',
+              _version: 1,
+              _updatedAt: local._updatedAt - 10_000,
+            },
+          },
+          {
+            collection: 'items',
+            kind: 'put',
+            doc: {
+              id: '2',
+              value: 'fresh',
+              _version: 1,
+              _updatedAt: local._updatedAt + 1,
+            },
+          },
+        ],
+        nextCursor: 'c-lww',
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    remoteSync.setConfig({
+      kind: 'fetch',
+      pullUrl: '/api/pull',
+      pushUrl: '/api/push',
+    });
+
+    await remoteSync.syncNow();
+
+    expect(port.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'conflict',
+        conflict: expect.objectContaining({
+          kind: 'lww',
+          id: '1',
+          outcome: 'local-wins',
+          collection: 'items',
+        }),
+      }),
+    );
+
+    // Fresh id=2 has no local doc → no LWW inspect, just a change event.
+    expect(port.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'change',
+        id: '2',
+        type: 'put',
+      }),
+    );
+
+    // Overwrite path: remote newer than local
+    port.postMessage.mockClear();
+    const { doc: local3 } = await engine.put(
+      'items',
+      { id: '3', value: 'old-local' },
+      { enqueueSync: false },
+    );
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        changes: [
+          {
+            collection: 'items',
+            kind: 'put',
+            doc: {
+              id: '3',
+              value: 'newer-remote',
+              _version: local3._version + 1,
+              _updatedAt: local3._updatedAt + 5_000,
+            },
+          },
+        ],
+        nextCursor: 'c-lww-2',
+      }),
+    });
+    await remoteSync.syncNow();
+    expect(port.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'conflict',
+        conflict: expect.objectContaining({
+          kind: 'lww',
+          id: '3',
+          outcome: 'remote-applied',
+        }),
       }),
     );
   });

@@ -19,7 +19,7 @@ function createDatabase<S extends CollectionSchema>(
 | `mode` | `'auto' \| 'shared' \| 'dedicated'` | no | Default `'auto'` |
 | `crossTabFallback` | `'auto' \| 'broadcast-channel' \| 'none'` | no | Default `'auto'`: in dedicated mode, relay live changes via `BroadcastChannel` |
 | `remote` | `RemoteSyncAdapter \| FetchSyncConfig` | no | Enables sync |
-| `onConflict` | `(conflict) => void` | no | Push conflict inspect hook (delegate + fetch; LWW still applies) |
+| `onConflict` | `(conflict: Conflict) => void` | no | Inspect hook for push conflicts and pull LWW outcomes (default LWW unchanged; not a CRDT resolver) |
 
 Throws if `window` is undefined (SSR).
 

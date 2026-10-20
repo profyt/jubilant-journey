@@ -37,15 +37,19 @@ const db = await createDatabase({
       return res.json();
     },
   },
-  onConflict: ({ opId, reason }) => {
-    console.warn('Conflict', opId, reason);
+  onConflict: (conflict) => {
+    if (conflict.kind === 'push') {
+      console.warn('Push conflict', conflict.opId, conflict.reason);
+    } else {
+      console.warn('LWW', conflict.outcome, conflict.collection, conflict.id);
+    }
   },
 });
 ```
 
 ### Fetch mode (`FetchSyncConfig`)
 
-Use for simple REST endpoints without custom client logic. HTTP runs inside the SharedWorker via `fetch()`.
+Use for simple REST endpoints without custom client logic. HTTP runs inside the SharedWorker via `fetch()`. Push and pull LWW inspect conflicts use the same `onConflict` hook (default LWW unchanged).
 
 ```typescript
 remote: {
@@ -87,7 +91,7 @@ remote: {
 }
 ```
 
-Applied `opId`s are removed from the local queue. Optional `conflicts` trigger `onConflict` on the leader tab (delegate mode).
+Applied `opId`s are removed from the local queue. Optional push `conflicts` trigger `onConflict` with `{ kind: 'push', ... }`. Pull LWW against an existing local doc also emits `{ kind: 'lww', outcome, local, remote, ... }` after LWW has decided (inspect-only; re-`put` to override).
 
 ### Pull response
 

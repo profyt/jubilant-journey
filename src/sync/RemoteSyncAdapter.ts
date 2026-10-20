@@ -13,10 +13,32 @@ export interface RemoteChange {
   kind: 'put' | 'delete';
 }
 
-export interface Conflict {
-  opId: string;
-  reason: string;
-}
+/**
+ * Inspect-only conflict / LWW notification. Default strategy remains
+ * last-write-wins — this hook does **not** change merge behaviour.
+ * To “resolve”, the app can `put` again after inspecting.
+ */
+export type Conflict =
+  | {
+      /** Server rejected or reported a push op conflict. */
+      kind: 'push';
+      opId: string;
+      reason: string;
+    }
+  | {
+      /**
+       * Pull applied LWW against an existing local doc.
+       * - `local-wins`: remote discarded (local newer / tie on version)
+       * - `remote-applied`: remote overwrote local
+       */
+      kind: 'lww';
+      collection: string;
+      id: string;
+      outcome: 'local-wins' | 'remote-applied';
+      local: DocumentMeta & Record<string, unknown>;
+      remote: DocumentMeta & Record<string, unknown>;
+      reason: string;
+    };
 
 export interface SyncStatus {
   pending: number;
@@ -45,7 +67,8 @@ export interface RemoteSyncAdapter {
   }>;
   push(ops: PendingOp[]): Promise<{
     applied: string[];
-    conflicts?: Conflict[];
+    /** Server-reported push conflicts (`onConflict` adds `kind: 'push'`). */
+    conflicts?: Array<{ opId: string; reason: string }>;
   }>;
 }
 
