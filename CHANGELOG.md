@@ -9,11 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-<<<<<<< HEAD
 - `pauseSync()` / `resumeSync()` and `SyncStatus.paused`; fetch-mode `onConflict` via worker conflict events; sync docs (auth headers, progress UX)
-=======
 - `batch(ops)` — multi-collection put/delete in one IndexedDB transaction (see API limits)
->>>>>>> origin/main
 - `defineCollection<TDoc>()` + stronger `InferDoc` / `DocInput` so typed schemas flow into `get`/`put`/`query` (plain schemas unchanged)
 - Dedicated-mode DX: `getWorkerMode()` / `getCrossTabTransport()`, optional `BroadcastChannel` cross-tab relay (`crossTabFallback`, default `auto`)
 
