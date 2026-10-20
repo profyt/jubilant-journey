@@ -75,6 +75,9 @@ export type WorkerRequest = {
   | { type: 'unsubscribe'; collection: string }
   | { type: 'syncNow' }
   | { type: 'getSyncStatus' }
+  | { type: 'getPendingOps' }
+  | { type: 'discardPendingOps'; opIds?: string[] }
+  | { type: 'discardFailedOps' }
   | { type: 'pauseSync' }
   | { type: 'resumeSync' }
 );

@@ -15,6 +15,7 @@ import type {
 import type {
   Conflict,
   FetchSyncConfig,
+  PendingOp,
   RemoteSyncAdapter,
   SyncStatus,
 } from '../sync/RemoteSyncAdapter.js';
@@ -123,6 +124,15 @@ export interface DatabaseClient<S extends CollectionSchema> {
   ): () => void;
   syncNow(): Promise<SyncStatus>;
   getSyncStatus(): Promise<SyncStatus>;
+  /** Snapshot of ops waiting in the sync queue (includes `failedReason` when set). */
+  getPendingOps(): Promise<PendingOp[]>;
+  /**
+   * Discard pending ops. Pass `opIds` to remove specific ops; omit / empty
+   * array clears the entire queue. Prefer `discardFailedOps()` for conflicts.
+   */
+  discardPendingOps(opIds?: string[]): Promise<SyncStatus>;
+  /** Discard ops marked failed after a push conflict. Retry the rest with `syncNow()`. */
+  discardFailedOps(): Promise<SyncStatus>;
   /** Worker mode, cross-tab transport, queue depth, last sync error. */
   getDiagnostics(): Promise<DatabaseDiagnostics>;
   /** Suspend automatic sync (debounce/backoff). `syncNow()` still runs. */
@@ -396,6 +406,21 @@ function createClientFromBridge<S extends CollectionSchema>(
 
     async getSyncStatus() {
       return bridge.call({ type: 'getSyncStatus' }) as Promise<SyncStatus>;
+    },
+
+    async getPendingOps() {
+      return bridge.call({ type: 'getPendingOps' }) as Promise<PendingOp[]>;
+    },
+
+    async discardPendingOps(opIds) {
+      return bridge.call({
+        type: 'discardPendingOps',
+        opIds,
+      }) as Promise<SyncStatus>;
+    },
+
+    async discardFailedOps() {
+      return bridge.call({ type: 'discardFailedOps' }) as Promise<SyncStatus>;
     },
 
     async getDiagnostics() {

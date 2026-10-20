@@ -208,7 +208,8 @@ describe('RemoteSync', () => {
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          applied: [opId],
+          // Conflicted ops stay in the queue when omitted from `applied`.
+          applied: [],
           conflicts: [{ opId, reason: 'version mismatch' }],
         }),
       })
@@ -340,6 +341,31 @@ describe('RemoteSync', () => {
         }),
       }),
     );
+
+    const after = await remoteSync.getPendingOps();
+    expect(after).toHaveLength(1);
+    expect(after[0]?.failedReason).toBe('version mismatch');
+    expect(remoteSync.getStatus().failed).toBe(1);
+    expect(remoteSync.getStatus().pending).toBe(1);
+
+    const cleared = await remoteSync.discardFailedOps();
+    expect(cleared.pending).toBe(0);
+    expect(cleared.failed).toBe(0);
+    expect(await remoteSync.getPendingOps()).toHaveLength(0);
+  });
+
+  it('discardPendingOps clears selected or all queue entries', async () => {
+    await engine.put('items', { id: 'a', value: 1 });
+    await engine.put('items', { id: 'b', value: 2 });
+    const ops = await remoteSync.getPendingOps();
+    expect(ops).toHaveLength(2);
+
+    await remoteSync.discardPendingOps([ops[0]!.opId]);
+    expect(await remoteSync.getPendingOps()).toHaveLength(1);
+
+    await remoteSync.discardPendingOps();
+    expect(await remoteSync.getPendingOps()).toHaveLength(0);
+    expect(remoteSync.getStatus().pending).toBe(0);
   });
 
   it('schedules backoff after a failed syncNow', async () => {

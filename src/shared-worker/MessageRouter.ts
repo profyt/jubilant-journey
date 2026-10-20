@@ -339,6 +339,21 @@ export class MessageRouter {
         };
       }
 
+      case 'getPendingOps': {
+        const ops = await this.remoteSync.getPendingOps();
+        return { kind: 'response', requestId, ok: true, data: ops };
+      }
+
+      case 'discardPendingOps': {
+        const status = await this.remoteSync.discardPendingOps(request.opIds);
+        return { kind: 'response', requestId, ok: true, data: status };
+      }
+
+      case 'discardFailedOps': {
+        const status = await this.remoteSync.discardFailedOps();
+        return { kind: 'response', requestId, ok: true, data: status };
+      }
+
       case 'pauseSync': {
         return {
           kind: 'response',

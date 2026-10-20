@@ -131,11 +131,16 @@ Pushes pending operations, then pulls remote changes. No-op queue flush if `remo
 ```typescript
 interface SyncStatus {
   pending: number;
+  failed: number; // push-conflict marked ops
   lastSyncAt: number | null;
   lastError: string | null;
   online: boolean;
+  nextSyncAt: number | null;
+  paused: boolean;
 }
 ```
+
+Queue helpers: `getPendingOps()`, `discardPendingOps(opIds?)`, `discardFailedOps()` — then `syncNow()` to retry.
 
 ### `close()`
 

@@ -5,6 +5,11 @@ export interface PendingOp {
   collection: string;
   doc: DocumentMeta & Record<string, unknown>;
   kind: 'put' | 'delete';
+  /**
+   * Set when the server reported a push conflict for this op.
+   * Cleared when the op is discarded or successfully applied later.
+   */
+  failedReason?: string;
 }
 
 export interface RemoteChange {
@@ -42,6 +47,8 @@ export type Conflict =
 
 export interface SyncStatus {
   pending: number;
+  /** Pending ops that previously received a push conflict (`failedReason`). */
+  failed: number;
   lastSyncAt: number | null;
   lastError: string | null;
   online: boolean;
