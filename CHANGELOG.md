@@ -7,12 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<<<<<<< HEAD
-### Changed
-
-- CI: `webkit-smoke` is a hard gate (removed `continue-on-error`); Playwright WebKit retries + poll waits (#49)
-- Bench harness uses `mode: 'auto'` and reports real `getWorkerMode()` / `getCrossTabTransport()` (WebKit-safe)
-=======
 ### Added
 
 - `onConflict` LWW inspect events on pull (`kind: 'lww'`, `outcome: 'local-wins' | 'remote-applied'`) alongside push conflicts (`kind: 'push'`) (#51)
@@ -20,7 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `Conflict` is a discriminated union (`kind: 'push' | 'lww'`); push payloads now include `kind: 'push'` (additive field)
->>>>>>> c2e6d8a (feat: LWW inspect events via onConflict (#51))
+- CI: `webkit-smoke` is a hard gate (removed `continue-on-error`); Playwright WebKit retries + poll waits (#49)
+- Bench harness uses `mode: 'auto'` and reports real `getWorkerMode()` / `getCrossTabTransport()` (WebKit-safe)
 
 ## [0.2.0] - 2026-10-20
 
