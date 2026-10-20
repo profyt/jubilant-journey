@@ -12,6 +12,7 @@ describe('DatabaseDiagnostics shape', () => {
       lastError: null,
       nextSyncAt: null,
       online: true,
+      paused: false,
     };
     expect(sample.queueDepth).toBe(sample.pending);
   });
