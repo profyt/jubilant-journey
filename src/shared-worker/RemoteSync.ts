@@ -27,6 +27,7 @@ export class RemoteSync {
     lastError: null,
     online: typeof navigator !== 'undefined' ? navigator.onLine : true,
     nextSyncAt: null,
+    paused: false,
   };
 
   private syncConfig: SyncConfig | null = null;
@@ -121,14 +122,32 @@ export class RemoteSync {
   }
 
   /**
-   * Debounced auto-sync after mutations. No-op when offline or no remote config.
+   * Debounced auto-sync after mutations. No-op when offline, paused, or no remote.
    */
   scheduleSync(options?: { debounceMs?: number }): void {
-    if (!this.syncConfig || !this.status.online) {
+    if (!this.syncConfig || !this.status.online || this.status.paused) {
       return;
     }
     const wait = options?.debounceMs ?? this.debounceMs;
     this.armTimer(wait);
+  }
+
+  /** Suspend automatic sync (debounce / backoff). Explicit `syncNow()` still runs. */
+  pauseSync(): SyncStatus {
+    this.status.paused = true;
+    this.clearSchedule();
+    this.broadcastStatus();
+    return this.getStatus();
+  }
+
+  /** Resume automatic sync; schedules an immediate debounce when online. */
+  resumeSync(): SyncStatus {
+    this.status.paused = false;
+    this.broadcastStatus();
+    if (this.syncConfig && this.status.online) {
+      this.scheduleSync({ debounceMs: 0 });
+    }
+    return this.getStatus();
   }
 
   /** Cancel pending debounce / backoff timers (tests / teardown). */
@@ -185,7 +204,7 @@ export class RemoteSync {
       await this.refreshPendingCount();
       return this.getStatus();
     }
-    if (!this.status.online && !options.force) {
+    if (!options.force && (this.status.paused || !this.status.online)) {
       return this.getStatus();
     }
 
@@ -212,7 +231,7 @@ export class RemoteSync {
   }
 
   private scheduleBackoff(): void {
-    if (!this.syncConfig || !this.status.online) {
+    if (!this.syncConfig || !this.status.online || this.status.paused) {
       return;
     }
     const exp = Math.min(
@@ -240,7 +259,7 @@ export class RemoteSync {
       }
       const pushBody = (await pushRes.json()) as PushResult;
       for (const conflict of pushBody.conflicts ?? []) {
-        this.onConflict?.(conflict);
+        this.emitConflict(conflict);
       }
       await this.db.removePendingOps(pushBody.applied);
     }
@@ -268,7 +287,7 @@ export class RemoteSync {
     if (pending.length > 0) {
       const pushResult = await this.delegatePush(leader.clientId, pending);
       for (const conflict of pushResult.conflicts ?? []) {
-        this.onConflict?.(conflict);
+        this.emitConflict(conflict);
       }
       await this.db.removePendingOps(pushResult.applied);
     }
@@ -277,6 +296,14 @@ export class RemoteSync {
     const pullResult = await this.delegatePull(leader.clientId, cursor);
     await this.applyAndBroadcast(pullResult.changes);
     await this.db.setCursor(pullResult.nextCursor);
+  }
+
+  private emitConflict(conflict: { opId: string; reason: string }): void {
+    this.onConflict?.(conflict);
+    this.registry.broadcast({
+      kind: 'conflict',
+      conflict,
+    });
   }
 
   private async applyAndBroadcast(changes: RemoteChange[]): Promise<void> {

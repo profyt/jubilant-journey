@@ -17,6 +17,23 @@ export type SyncConfig =
       headers?: Record<string, string>;
     };
 
+/** One write inside `batch()` — put or soft-delete across collections. */
+export type BatchOp =
+  | {
+      type: 'put';
+      collection: string;
+      doc: Record<string, unknown> & { id: string };
+    }
+  | { type: 'delete'; collection: string; id: string };
+
+/** Applied op result from `batch()` (skipped deletes are omitted). */
+export type BatchResultItem = {
+  type: 'put' | 'delete';
+  collection: string;
+  id: string;
+  doc: DocumentMeta & Record<string, unknown>;
+};
+
 export type WorkerRequest = {
   requestId: string;
 } & (
@@ -53,10 +70,13 @@ export type WorkerRequest = {
     }
   | { type: 'deleteMany'; collection: string; ids: string[] }
   | { type: 'clear'; collection: string }
+  | { type: 'batch'; ops: BatchOp[] }
   | { type: 'subscribe'; collection: string; filter?: QueryFilter }
   | { type: 'unsubscribe'; collection: string }
   | { type: 'syncNow' }
   | { type: 'getSyncStatus' }
+  | { type: 'pauseSync' }
+  | { type: 'resumeSync' }
 );
 
 export type WorkerResponse =
@@ -81,6 +101,12 @@ export type SyncStatusEventPayload = {
   status: SyncStatus;
 };
 
+/** Push conflict from fetch-mode sync (worker → tabs). */
+export type ConflictEventPayload = {
+  kind: 'conflict';
+  conflict: { opId: string; reason: string };
+};
+
 export type SyncDelegateRequest =
   | { kind: 'sync:pull'; requestId: string; cursor: string | null }
   | { kind: 'sync:push'; requestId: string; ops: PendingOp[] };
@@ -102,6 +128,7 @@ export type SyncDelegateResponse =
 export type WorkerEvent =
   | ChangeEventPayload
   | SyncStatusEventPayload
+  | ConflictEventPayload
   | SyncDelegateRequest;
 
 export type PortMessage = WorkerRequest | WorkerResponse | WorkerEvent | SyncDelegateResponse;
@@ -121,6 +148,17 @@ export function isWorkerEvent(msg: PortMessage): msg is WorkerEvent {
     kind !== 'response' &&
     kind !== 'sync:pull:result' &&
     kind !== 'sync:push:result'
+  );
+}
+
+export function isConflictEvent(
+  msg: PortMessage,
+): msg is ConflictEventPayload {
+  return (
+    typeof msg === 'object' &&
+    msg !== null &&
+    'kind' in msg &&
+    (msg as { kind: string }).kind === 'conflict'
   );
 }
 

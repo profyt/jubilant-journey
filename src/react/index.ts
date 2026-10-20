@@ -9,7 +9,7 @@ export type {
   DatabaseProviderProps,
 } from './DatabaseProvider.js';
 
-export { useQuery } from './useQuery.js';
+export { useQuery, useLiveQuery } from './useQuery.js';
 export type { UseQueryOptions, UseQueryResult } from './useQuery.js';
 
 export { useSubscribe } from './useSubscribe.js';

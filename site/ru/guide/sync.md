@@ -116,10 +116,12 @@ remote: {
 
 ```typescript
 db.onSyncStatusChange((status) => {
-  console.log(status.pending, status.online, status.lastError);
+  console.log(status.pending, status.nextSyncAt, status.paused, status.lastError);
 });
 
-await db.syncNow();
+await db.pauseSync();
+await db.resumeSync();
+await db.syncNow(); // работает и при pause
 ```
 
 | Поле | Значение |
@@ -127,7 +129,9 @@ await db.syncNow();
 | `pending` | Операции в очереди sync |
 | `lastSyncAt` | Время последней успешной синхронизации |
 | `lastError` | Последнее сообщение об ошибке или `null` |
+| `nextSyncAt` | Следующий auto-sync (debounce/backoff) или `null` |
 | `online` | `navigator.onLine` в worker |
+| `paused` | Пользователь поставил автоматический sync на паузу |
 
 ## Mock-адаптер
 

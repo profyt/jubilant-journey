@@ -1,4 +1,9 @@
 export { createDatabase, isSharedWorkerSupported, resolveWorkerMode } from './client/createDatabase.js';
+export {
+  createTempId,
+  isTempId,
+  withOptimisticPut,
+} from './client/optimistic.js';
 export { sharedWorkerUrl, dedicatedWorkerUrl } from './workerUrls.js';
 export type {
   ChangeEvent,
@@ -31,6 +36,7 @@ export {
   type InferDoc,
   type DocInput,
   type QueryOptions,
+  type QueryOrderBy,
   type IDBKeyRangeInit,
   type SchemaChangeKind,
   type SchemaChangeResult,
@@ -46,6 +52,8 @@ export type {
   ChangeEventPayload,
   ConnectResult,
   QueryFilter,
+  BatchOp,
+  BatchResultItem,
 } from './shared/protocol.js';
 export type { DbError, DbErrorCode } from './shared/errors.js';
 export { DatabaseError, dbError } from './shared/errors.js';
