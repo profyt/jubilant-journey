@@ -42,6 +42,7 @@ export type DatabaseDiagnostics = {
   lastError: string | null;
   nextSyncAt: number | null;
   online: boolean;
+  paused: boolean;
 };
 
 export type RemoteConfig = RemoteSyncAdapter | FetchSyncConfig;
@@ -405,6 +406,7 @@ function createClientFromBridge<S extends CollectionSchema>(
         lastError: status.lastError,
         nextSyncAt: status.nextSyncAt,
         online: status.online,
+        paused: status.paused,
       } satisfies DatabaseDiagnostics;
     },
 
