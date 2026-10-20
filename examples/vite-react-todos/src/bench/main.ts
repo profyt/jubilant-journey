@@ -47,11 +47,17 @@ export type SyncBenchResult = {
 export type WsdBenchApi = {
   dbName: string;
   workerMode: string;
+  crossTabTransport: string;
   ready: () => Promise<true>;
   throughput: (n?: number) => Promise<ThroughputResult>;
   latency: (n?: number) => Promise<LatencyResult>;
   putOne: (id: string, title: string) => Promise<void>;
   getOne: (id: string) => Promise<{ id: string; title: string } | null>;
+  putManyPayload: (
+    count: number,
+    bytesPerDoc: number,
+  ) => Promise<{ written: number; quotaExceeded: boolean; error?: string }>;
+  reopenSameDb: () => Promise<{ ok: boolean; count: number; error?: string }>;
   waitChanges: (expected: number, timeoutMs?: number) => Promise<number>;
   clearChangeCount: () => void;
   getChangeCount: () => number;
@@ -142,10 +148,13 @@ async function boot(): Promise<void> {
 
   let db: BenchDb;
   try {
+    // `auto`: SharedWorker when available, dedicated (+ BC fan-out) otherwise.
+    // Required for WebKit / Safari smoke; Chromium still resolves to shared.
     db = await createDatabase({
       schema,
       dbName,
-      mode: 'shared',
+      mode: 'auto',
+      crossTabFallback: 'auto',
       sharedWorker: sharedWorkerUrl,
       dedicatedWorker: dedicatedWorkerUrl,
       remote,
@@ -159,14 +168,18 @@ async function boot(): Promise<void> {
     throw err;
   }
 
+  const workerMode = db.getWorkerMode();
+  const crossTabTransport = db.getCrossTabTransport();
+
   let changeCount = 0;
-  const unsub = db.subscribe('items', () => {
+  let unsub = db.subscribe('items', () => {
     changeCount += 1;
   });
 
   const api: WsdBenchApi = {
     dbName,
-    workerMode: 'shared',
+    workerMode,
+    crossTabTransport,
     ready: async () => true,
 
     async throughput(n = 150) {
@@ -239,6 +252,63 @@ async function boot(): Promise<void> {
       return { id: String(doc.id), title: String(doc.title ?? '') };
     },
 
+    async putManyPayload(count, bytesPerDoc) {
+      const chunk = 'x'.repeat(Math.max(1, bytesPerDoc));
+      let written = 0;
+      try {
+        // Batch in chunks to keep CI time bounded while still stressing IDB.
+        const batchSize = 25;
+        for (let i = 0; i < count; i += batchSize) {
+          const slice = Math.min(batchSize, count - i);
+          const docs = Array.from({ length: slice }, (_, j) => {
+            const n = i + j;
+            return {
+              id: `q-${n}`,
+              title: chunk,
+              kind: 'quota',
+            };
+          });
+          await db.putMany('items', docs);
+          written += slice;
+        }
+        return { written, quotaExceeded: false };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        const name = err instanceof Error ? err.name : '';
+        const quotaExceeded =
+          name === 'QuotaExceededError' ||
+          /quotaexceeded|quota.?exceeded|storage.*full/i.test(message);
+        return { written, quotaExceeded, error: message };
+      }
+    },
+
+    async reopenSameDb() {
+      try {
+        unsub();
+        db.close();
+        db = await createDatabase({
+          schema,
+          dbName,
+          mode: 'auto',
+          crossTabFallback: 'auto',
+          sharedWorker: sharedWorkerUrl,
+          dedicatedWorker: dedicatedWorkerUrl,
+          remote,
+        });
+        changeCount = 0;
+        unsub = db.subscribe('items', () => {
+          changeCount += 1;
+        });
+        api.workerMode = db.getWorkerMode();
+        api.crossTabTransport = db.getCrossTabTransport();
+        const rows = await db.query('items');
+        return { ok: true, count: rows.length };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        return { ok: false, count: 0, error: message };
+      }
+    },
+
     clearChangeCount() {
       changeCount = 0;
     },
@@ -298,7 +368,11 @@ async function boot(): Promise<void> {
   window.__wsdBench = api;
   document.body.dataset.benchReady = '1';
   document.body.dataset.dbName = dbName;
-  setStatus(`ready\ndb=${dbName}\nmode=shared\nremote=${withRemote ? '1' : '0'}`);
+  document.body.dataset.workerMode = workerMode;
+  document.body.dataset.crossTabTransport = crossTabTransport;
+  setStatus(
+    `ready\ndb=${dbName}\nmode=${workerMode}\ntransport=${crossTabTransport}\nremote=${withRemote ? '1' : '0'}`,
+  );
 }
 
 void boot().catch(() => {

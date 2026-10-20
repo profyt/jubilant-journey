@@ -2,8 +2,8 @@ import { expect, test } from '@playwright/test';
 import { benchCall, waitBenchReady } from './helpers.js';
 
 /**
- * WebKit smoke (#35): soft CI gate — basic IndexedDB path + best-effort cross-tab.
- * SharedWorker may be unavailable in some WebKit builds; dedicated + BC is OK.
+ * WebKit smoke (#49): hard CI gate after flake hardening.
+ * SharedWorker may be unavailable; dedicated + BroadcastChannel is OK.
  */
 test.describe.configure({ mode: 'serial' });
 
@@ -12,16 +12,20 @@ test('webkit: put/get via createDatabase', async ({ page, browserName }) => {
   await page.goto('/bench.html');
   await waitBenchReady(page);
 
-  const mode = await page.evaluate(() => window.__wsdBench!.workerMode);
-  expect(['shared', 'dedicated']).toContain(mode);
+  await expect
+    .poll(async () => page.evaluate(() => window.__wsdBench?.workerMode), {
+      timeout: 15_000,
+    })
+    .toMatch(/^(shared|dedicated)$/);
 
   await benchCall(page, 'putOne', 'wk-1', 'webkit hello');
-  const doc = await benchCall<{ id: string; title: string } | null>(
-    page,
-    'getOne',
-    'wk-1',
-  );
-  expect(doc).toEqual({ id: 'wk-1', title: 'webkit hello' });
+  await expect
+    .poll(
+      async () =>
+        benchCall<{ id: string; title: string } | null>(page, 'getOne', 'wk-1'),
+      { timeout: 15_000 },
+    )
+    .toEqual({ id: 'wk-1', title: 'webkit hello' });
 });
 
 test('webkit: cross-tab fan-out (shared or BC fallback)', async ({
@@ -31,32 +35,55 @@ test('webkit: cross-tab fan-out (shared or BC fallback)', async ({
 }) => {
   test.skip(browserName !== 'webkit', 'WebKit-only smoke');
   const context = await browser.newContext();
-  const writer = await context.newPage();
-  await writer.goto(`${baseURL}/bench.html`);
-  await waitBenchReady(writer);
+  try {
+    const writer = await context.newPage();
+    await writer.goto(`${baseURL}/bench.html`, {
+      waitUntil: 'domcontentloaded',
+    });
+    await waitBenchReady(writer);
 
-  const mode = await writer.evaluate(() => window.__wsdBench!.workerMode);
-  const dbName = await writer.evaluate(() => window.__wsdBench!.dbName);
+    const mode = await writer.evaluate(() => window.__wsdBench!.workerMode);
+    const transport = await writer.evaluate(
+      () => window.__wsdBench!.crossTabTransport,
+    );
+    const dbName = await writer.evaluate(() => window.__wsdBench!.dbName);
+    expect(['shared', 'dedicated']).toContain(mode);
+    expect(['shared-worker', 'broadcast-channel', 'none']).toContain(transport);
 
-  const reader = await context.newPage();
-  await reader.goto(`${baseURL}/bench.html?db=${encodeURIComponent(dbName)}`);
-  await waitBenchReady(reader);
-  await benchCall(reader, 'clearChangeCount');
+    const reader = await context.newPage();
+    await reader.goto(`${baseURL}/bench.html?db=${encodeURIComponent(dbName)}`, {
+      waitUntil: 'domcontentloaded',
+    });
+    await waitBenchReady(reader);
+    await benchCall(reader, 'clearChangeCount');
 
-  await benchCall(writer, 'putOne', 'wk-cross', 'from writer');
+    await benchCall(writer, 'putOne', 'wk-cross', 'from writer');
 
-  // Soft: allow slower fan-out on WebKit CI VMs
-  const received = await benchCall<number>(reader, 'waitChanges', 1, 30_000);
-  const last = await benchCall<{ id: string; title: string } | null>(
-    reader,
-    'getOne',
-    'wk-cross',
-  );
+    // Poll for fan-out — WebKit CI VMs can be slow; BC path is fine.
+    await expect
+      .poll(async () => benchCall<number>(reader, 'getChangeCount'), {
+        timeout: 45_000,
+        intervals: [100, 250, 500, 1000],
+      })
+      .toBeGreaterThanOrEqual(1);
 
-  expect(received).toBeGreaterThanOrEqual(1);
-  expect(last).toEqual({ id: 'wk-cross', title: 'from writer' });
-  // Document which path we got for CI logs
-  // eslint-disable-next-line no-console
-  console.info(`[webkit-smoke] workerMode=${mode} dbName=${dbName}`);
-  await context.close();
+    await expect
+      .poll(
+        async () =>
+          benchCall<{ id: string; title: string } | null>(
+            reader,
+            'getOne',
+            'wk-cross',
+          ),
+        { timeout: 15_000 },
+      )
+      .toEqual({ id: 'wk-cross', title: 'from writer' });
+
+    // eslint-disable-next-line no-console
+    console.info(
+      `[webkit-smoke] workerMode=${mode} transport=${transport} dbName=${dbName}`,
+    );
+  } finally {
+    await context.close();
+  }
 });
