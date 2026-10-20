@@ -103,6 +103,10 @@ export interface DatabaseClient<S extends CollectionSchema> {
   ): () => void;
   syncNow(): Promise<SyncStatus>;
   getSyncStatus(): Promise<SyncStatus>;
+  /** Suspend automatic sync (debounce/backoff). `syncNow()` still runs. */
+  pauseSync(): Promise<SyncStatus>;
+  /** Resume automatic sync and schedule a near-immediate attempt when online. */
+  resumeSync(): Promise<SyncStatus>;
   onSyncStatusChange(listener: (status: SyncStatus) => void): () => void;
   close(): void;
 }
@@ -359,6 +363,14 @@ function createClientFromBridge<S extends CollectionSchema>(
 
     async getSyncStatus() {
       return bridge.call({ type: 'getSyncStatus' }) as Promise<SyncStatus>;
+    },
+
+    async pauseSync() {
+      return bridge.call({ type: 'pauseSync' }) as Promise<SyncStatus>;
+    },
+
+    async resumeSync() {
+      return bridge.call({ type: 'resumeSync' }) as Promise<SyncStatus>;
     },
 
     onSyncStatusChange(listener) {

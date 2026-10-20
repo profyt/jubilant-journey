@@ -116,10 +116,12 @@ Applied `opId`s are removed from the local queue. Optional `conflicts` trigger `
 
 ```typescript
 db.onSyncStatusChange((status) => {
-  console.log(status.pending, status.online, status.lastError);
+  console.log(status.pending, status.nextSyncAt, status.paused, status.lastError);
 });
 
-await db.syncNow();
+await db.pauseSync();
+await db.resumeSync();
+await db.syncNow(); // works while paused
 ```
 
 | Field | Meaning |
@@ -127,7 +129,9 @@ await db.syncNow();
 | `pending` | Ops waiting in sync queue |
 | `lastSyncAt` | Timestamp of last successful sync |
 | `lastError` | Last error message or null |
+| `nextSyncAt` | Next auto-sync (debounce/backoff), or `null` |
 | `online` | `navigator.onLine` in worker |
+| `paused` | User paused automatic sync |
 
 ## Mock adapter
 

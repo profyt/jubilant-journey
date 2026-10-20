@@ -339,6 +339,24 @@ export class MessageRouter {
         };
       }
 
+      case 'pauseSync': {
+        return {
+          kind: 'response',
+          requestId,
+          ok: true,
+          data: this.remoteSync.pauseSync(),
+        };
+      }
+
+      case 'resumeSync': {
+        return {
+          kind: 'response',
+          requestId,
+          ok: true,
+          data: this.remoteSync.resumeSync(),
+        };
+      }
+
       default: {
         return this.fail(requestId, 'InvalidRequest', 'Unknown request type');
       }
