@@ -233,6 +233,17 @@ describe('RemoteSync', () => {
         conflict: { kind: 'push', opId, reason: 'version mismatch' },
       }),
     );
+
+    const after = await remoteSync.getPendingOps();
+    expect(after).toHaveLength(1);
+    expect(after[0]?.failedReason).toBe('version mismatch');
+    expect(remoteSync.getStatus().failed).toBe(1);
+    expect(remoteSync.getStatus().pending).toBe(1);
+
+    const cleared = await remoteSync.discardFailedOps();
+    expect(cleared.pending).toBe(0);
+    expect(cleared.failed).toBe(0);
+    expect(await remoteSync.getPendingOps()).toHaveLength(0);
   });
 
   it('emits LWW inspect conflicts when pull skips or overwrites local', async () => {
@@ -341,17 +352,6 @@ describe('RemoteSync', () => {
         }),
       }),
     );
-
-    const after = await remoteSync.getPendingOps();
-    expect(after).toHaveLength(1);
-    expect(after[0]?.failedReason).toBe('version mismatch');
-    expect(remoteSync.getStatus().failed).toBe(1);
-    expect(remoteSync.getStatus().pending).toBe(1);
-
-    const cleared = await remoteSync.discardFailedOps();
-    expect(cleared.pending).toBe(0);
-    expect(cleared.failed).toBe(0);
-    expect(await remoteSync.getPendingOps()).toHaveLength(0);
   });
 
   it('discardPendingOps clears selected or all queue entries', async () => {
