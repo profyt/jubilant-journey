@@ -17,6 +17,23 @@ export type SyncConfig =
       headers?: Record<string, string>;
     };
 
+/** One write inside `batch()` — put or soft-delete across collections. */
+export type BatchOp =
+  | {
+      type: 'put';
+      collection: string;
+      doc: Record<string, unknown> & { id: string };
+    }
+  | { type: 'delete'; collection: string; id: string };
+
+/** Applied op result from `batch()` (skipped deletes are omitted). */
+export type BatchResultItem = {
+  type: 'put' | 'delete';
+  collection: string;
+  id: string;
+  doc: DocumentMeta & Record<string, unknown>;
+};
+
 export type WorkerRequest = {
   requestId: string;
 } & (
@@ -53,6 +70,7 @@ export type WorkerRequest = {
     }
   | { type: 'deleteMany'; collection: string; ids: string[] }
   | { type: 'clear'; collection: string }
+  | { type: 'batch'; ops: BatchOp[] }
   | { type: 'subscribe'; collection: string; filter?: QueryFilter }
   | { type: 'unsubscribe'; collection: string }
   | { type: 'syncNow' }

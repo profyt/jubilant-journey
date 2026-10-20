@@ -45,6 +45,8 @@ export type {
   ChangeEventPayload,
   ConnectResult,
   QueryFilter,
+  BatchOp,
+  BatchResultItem,
 } from './shared/protocol.js';
 export type { DbError, DbErrorCode } from './shared/errors.js';
 export { DatabaseError, dbError } from './shared/errors.js';

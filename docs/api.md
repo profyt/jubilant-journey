@@ -110,6 +110,39 @@ Soft-deletes **all non-deleted** documents in the collection (same semantics as 
 
 ---
 
+### `batch(ops)`
+
+```typescript
+batch(ops: BatchOp[]): Promise<BatchResultItem[]>;
+
+type BatchOp =
+  | { type: 'put'; collection: string; doc: Record<string, unknown> & { id: string } }
+  | { type: 'delete'; collection: string; id: string };
+
+type BatchResultItem = {
+  type: 'put' | 'delete';
+  collection: string;
+  id: string;
+  doc: DocumentMeta & Record<string, unknown>;
+};
+```
+
+Apply put/delete ops across **one or more collections** in a **single IndexedDB transaction**. Enqueues one sync op per applied write when `remote` is set. Broadcasts a change event per applied op after commit.
+
+**Semantics**
+
+- Missing delete targets are **skipped** (same as `deleteMany`); they do not appear in the result array.
+- Soft-delete model and last-write-wins meta (`_version` / `_updatedAt`) — not a CRDT.
+- Empty `ops` → `[]`.
+
+**IndexedDB limits (honest)**
+
+- All object stores used by the batch must already exist in the schema; stores are opened **upfront** (IDB cannot open additional stores mid-transaction).
+- No nested transactions; one atomic commit for the whole batch (or full abort on storage error).
+- Prefer `putMany` / `deleteMany` for large single-collection bulk writes.
+
+---
+
 ### `query(collection, opts?)`
 
 ```typescript
