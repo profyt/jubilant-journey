@@ -19,7 +19,7 @@ function createDatabase<S extends CollectionSchema>(
 | `mode` | `'auto' \| 'shared' \| 'dedicated'` | no | Default `'auto'` |
 | `crossTabFallback` | `'auto' \| 'broadcast-channel' \| 'none'` | no | Default `'auto'`: in dedicated mode, relay live changes via `BroadcastChannel` |
 | `remote` | `RemoteSyncAdapter \| FetchSyncConfig` | no | Enables sync |
-| `onConflict` | `(conflict) => void` | no | Push conflicts (delegate adapter) |
+| `onConflict` | `(conflict) => void` | no | Push conflict inspect hook (delegate + fetch; LWW still applies) |
 
 Throws if `window` is undefined (SSR).
 
@@ -194,8 +194,19 @@ interface SyncStatus {
   online: boolean;
   /** Next debounced / backoff auto-sync (epoch ms), or null */
   nextSyncAt: number | null;
+  /** User pause — auto-sync suspended; `syncNow()` still runs */
+  paused: boolean;
 }
 ```
+
+### `pauseSync()` / `resumeSync()`
+
+```typescript
+pauseSync(): Promise<SyncStatus>;
+resumeSync(): Promise<SyncStatus>;
+```
+
+Suspend or resume **automatic** sync (debounce / backoff). Explicit `syncNow()` still runs while paused.
 
 ---
 

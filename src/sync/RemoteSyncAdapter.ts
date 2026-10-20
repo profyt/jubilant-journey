@@ -25,6 +25,8 @@ export interface SyncStatus {
   online: boolean;
   /** When the next debounced / backoff sync will run (epoch ms), or null. */
   nextSyncAt: number | null;
+  /** User pause — auto-sync (debounce/backoff) is suspended. `syncNow()` still runs. */
+  paused: boolean;
 }
 
 export interface SyncSchedulerOptions {

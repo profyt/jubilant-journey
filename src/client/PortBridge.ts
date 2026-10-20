@@ -119,6 +119,9 @@ export class PortBridge {
         await this.handleSyncDelegate(data);
         return;
       }
+      if (data.kind === 'conflict') {
+        this.onConflict?.(data.conflict);
+      }
       for (const listener of this.eventListeners) {
         listener(data);
       }
@@ -164,9 +167,7 @@ export class PortBridge {
         } satisfies SyncDelegateResponse);
       } else {
         const result = await this.remote.push(request.ops);
-        for (const conflict of result.conflicts ?? []) {
-          this.onConflict?.(conflict);
-        }
+        // Conflicts are delivered via worker `conflict` events (RemoteSync.emitConflict).
         this.port.postMessage({
           kind: 'sync:push:result',
           requestId: request.requestId,
