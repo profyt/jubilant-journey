@@ -47,11 +47,10 @@ jobs:
             e2e-bench-report.json
           if-no-files-found: ignore
 
-  # Soft gate (#35): WebKit smoke — continue-on-error until CI-stable enough to harden.
+  # Hard gate (#49): WebKit smoke — retries in Playwright config; fails the PR if red.
   webkit-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    continue-on-error: true
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

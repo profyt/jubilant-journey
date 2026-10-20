@@ -7,21 +7,26 @@ const baseURL = `http://127.0.0.1:${port}`;
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
 /**
- * Soft WebKit smoke (#35). Separate from Chromium hard-gate benches.
+ * Hard WebKit smoke (#49). Separate from Chromium benches; retries for flake.
  */
 export default defineConfig({
   testDir: '.',
   testMatch: /webkit-smoke\.spec\.ts/,
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 3 : 0,
   workers: 1,
   timeout: 120_000,
+  expect: {
+    timeout: 20_000,
+  },
   outputDir: path.join(repoRoot, 'test-results-webkit'),
   reporter: [['list']],
   use: {
     baseURL,
     trace: 'on-first-retry',
+    actionTimeout: 30_000,
+    navigationTimeout: 60_000,
   },
   projects: [
     {

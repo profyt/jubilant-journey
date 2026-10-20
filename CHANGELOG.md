@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- CI: `webkit-smoke` is a hard gate (removed `continue-on-error`); Playwright WebKit retries + poll waits (#49)
+- Bench harness uses `mode: 'auto'` and reports real `getWorkerMode()` / `getCrossTabTransport()` (WebKit-safe)
+
 ## [0.2.0] - 2026-10-20
 
 ### Added
