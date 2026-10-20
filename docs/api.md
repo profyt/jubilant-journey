@@ -117,7 +117,9 @@ batch(ops: BatchOp[]): Promise<BatchResultItem[]>;
 
 type BatchOp =
   | { type: 'put'; collection: string; doc: Record<string, unknown> & { id: string } }
-  | { type: 'delete'; collection: string; id: string };
+  | { type: 'putMany'; collection: string; docs: Array<Record<string, unknown> & { id: string }> }
+  | { type: 'delete'; collection: string; id: string }
+  | { type: 'clear'; collection: string };
 
 type BatchResultItem = {
   type: 'put' | 'delete';
@@ -127,11 +129,12 @@ type BatchResultItem = {
 };
 ```
 
-Apply put/delete ops across **one or more collections** in a **single IndexedDB transaction**. Enqueues one sync op per applied write when `remote` is set. Broadcasts a change event per applied op after commit.
+Apply put / putMany / delete / clear across **one or more collections** in a **single IndexedDB transaction**. Enqueues one sync op per applied write when `remote` is set. Broadcasts a change event per applied op after commit.
 
 **Semantics**
 
 - Missing delete targets are **skipped** (same as `deleteMany`); they do not appear in the result array.
+- `clear` soft-deletes every non-deleted doc in that collection (same as `clear(collection)`, but composable with other ops in one tx).
 - Soft-delete model and last-write-wins meta (`_version` / `_updatedAt`) — not a CRDT.
 - Empty `ops` → `[]`.
 
@@ -139,7 +142,8 @@ Apply put/delete ops across **one or more collections** in a **single IndexedDB 
 
 - All object stores used by the batch must already exist in the schema; stores are opened **upfront** (IDB cannot open additional stores mid-transaction).
 - No nested transactions; one atomic commit for the whole batch (or full abort on storage error).
-- Prefer `putMany` / `deleteMany` for large single-collection bulk writes.
+- Prefer standalone `putMany` / `deleteMany` / `clear` for large **single-collection** bulk writes (same engine path, simpler call site).
+- Still no cross-database txs, no schema mutation inside a batch, and no CRDT merge.
 
 ---
 

@@ -388,8 +388,9 @@ export class DbEngine {
   }
 
   /**
-   * Apply put/delete ops across one or more collections in a single IDB
-   * transaction. Missing delete targets are skipped (same as `deleteMany`).
+   * Apply put / putMany / delete / clear across one or more collections in a
+   * single IDB transaction. Missing delete targets are skipped (same as
+   * `deleteMany`). `clear` soft-deletes every non-deleted doc in the store.
    *
    * Limits: all object stores must exist in the schema; stores are opened
    * upfront (IndexedDB cannot add stores mid-transaction); no nested txs.
@@ -440,61 +441,85 @@ export class DbEngine {
       op: PendingOp | null;
     }> = [];
 
+    const pushPut = async (
+      collection: string,
+      payload: Record<string, unknown> & { id: string },
+    ): Promise<void> => {
+      const store = tx.objectStore(collection);
+      const existing = (await store.get(payload.id)) as
+        | (DocumentMeta & Record<string, unknown>)
+        | undefined;
+      const doc = withMeta(payload.id, payload, existing ?? null);
+      const op: PendingOp | null =
+        enqueueSync && queue
+          ? {
+              opId: crypto.randomUUID(),
+              collection,
+              doc,
+              kind: 'put',
+            }
+          : null;
+      await store.put(doc);
+      if (op && queue) {
+        await queue.put(op);
+      }
+      results.push({ type: 'put', collection, id: doc.id, doc, op });
+    };
+
+    const pushDelete = async (
+      collection: string,
+      existing: DocumentMeta & Record<string, unknown>,
+    ): Promise<void> => {
+      const store = tx.objectStore(collection);
+      const doc = withSoftDelete(existing);
+      const op: PendingOp | null =
+        enqueueSync && queue
+          ? {
+              opId: crypto.randomUUID(),
+              collection,
+              doc,
+              kind: 'delete',
+            }
+          : null;
+      await store.put(doc);
+      if (op && queue) {
+        await queue.put(op);
+      }
+      results.push({
+        type: 'delete',
+        collection,
+        id: String(existing.id),
+        doc,
+        op,
+      });
+    };
+
     for (const item of ops) {
-      const store = tx.objectStore(item.collection);
       if (item.type === 'put') {
-        const existing = (await store.get(item.doc.id)) as
-          | (DocumentMeta & Record<string, unknown>)
-          | undefined;
-        const doc = withMeta(item.doc.id, item.doc, existing ?? null);
-        const op: PendingOp | null =
-          enqueueSync && queue
-            ? {
-                opId: crypto.randomUUID(),
-                collection: item.collection,
-                doc,
-                kind: 'put',
-              }
-            : null;
-        await store.put(doc);
-        if (op && queue) {
-          await queue.put(op);
+        await pushPut(item.collection, item.doc);
+      } else if (item.type === 'putMany') {
+        for (const doc of item.docs) {
+          await pushPut(item.collection, doc);
         }
-        results.push({
-          type: 'put',
-          collection: item.collection,
-          id: doc.id,
-          doc,
-          op,
-        });
-      } else {
+      } else if (item.type === 'delete') {
+        const store = tx.objectStore(item.collection);
         const existing = (await store.get(item.id)) as
           | (DocumentMeta & Record<string, unknown>)
           | undefined;
         if (!existing || existing._deleted) {
           continue;
         }
-        const doc = withSoftDelete(existing);
-        const op: PendingOp | null =
-          enqueueSync && queue
-            ? {
-                opId: crypto.randomUUID(),
-                collection: item.collection,
-                doc,
-                kind: 'delete',
-              }
-            : null;
-        await store.put(doc);
-        if (op && queue) {
-          await queue.put(op);
+        await pushDelete(item.collection, existing);
+      } else {
+        // clear — soft-delete all non-deleted docs in the collection
+        const store = tx.objectStore(item.collection);
+        const all = (await store.getAll()) as Array<
+          DocumentMeta & Record<string, unknown>
+        >;
+        for (const existing of all) {
+          if (existing._deleted) continue;
+          await pushDelete(item.collection, existing);
         }
-        results.push({
-          type: 'delete',
-          collection: item.collection,
-          id: item.id,
-          doc,
-          op,
-        });
       }
     }
 
