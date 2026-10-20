@@ -74,6 +74,11 @@ Called during SSR or in Node tests without `window`. Initialize only in `useEffe
 
 Common in Safari private mode or full disk. Catch storage errors and warn users; reduce stored payload size.
 
+## Diagnostics
+
+1. Check `await db.getDiagnostics()` (worker mode, transport, `queueDepth`, `lastError`) or `getSyncStatus()`.
+2. For push conflicts: inspect `getPendingOps()` (`failedReason`), then `discardFailedOps()` and `syncNow()`.
+
 ## DevTools
 
 | Tool | Location |

@@ -37,15 +37,19 @@ const db = await createDatabase({
       return res.json();
     },
   },
-  onConflict: ({ opId, reason }) => {
-    console.warn('Conflict', opId, reason);
+  onConflict: (conflict) => {
+    if (conflict.kind === 'push') {
+      console.warn('Конфликт push', conflict.opId, conflict.reason);
+    } else {
+      console.warn('LWW', conflict.outcome, conflict.collection, conflict.id);
+    }
   },
 });
 ```
 
 ### Режим fetch (`FetchSyncConfig`)
 
-Для простых REST-эндпоинтов без своей клиентской логики. HTTP выполняется внутри SharedWorker через `fetch()`.
+Для простых REST-эндпоинтов без своей клиентской логики. HTTP выполняется внутри SharedWorker через `fetch()`. Конфликты push и исходы pull LWW используют тот же хук `onConflict` (стратегия LWW по умолчанию не меняется).
 
 ```typescript
 remote: {
@@ -87,7 +91,7 @@ remote: {
 }
 ```
 
-Применённые `opId` удаляются из локальной очереди. Опциональные `conflicts` вызывают `onConflict` на leader-вкладке (режим delegate).
+Применённые `opId` удаляются из локальной очереди. Опциональные `conflicts` в ответе push вызывают `onConflict` с `{ kind: 'push', ... }`. Pull LWW по уже существующему локальному документу также шлёт `{ kind: 'lww', outcome, local, remote, ... }` после решения LWW (только наблюдение; чтобы переопределить — снова `put`).
 
 ### Ответ pull
 
@@ -127,6 +131,7 @@ await db.syncNow(); // работает и при pause
 | Поле | Значение |
 |------|----------|
 | `pending` | Операции в очереди sync |
+| `failed` | Ops с `failedReason` после push-конфликта |
 | `lastSyncAt` | Время последней успешной синхронизации |
 | `lastError` | Последнее сообщение об ошибке или `null` |
 | `nextSyncAt` | Следующий auto-sync (debounce/backoff) или `null` |

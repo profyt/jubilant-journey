@@ -74,6 +74,11 @@ await createDatabase({
 
 Часто в приватном режиме Safari или при заполненном диске. Ловите ошибки хранилища и предупреждайте пользователей; уменьшайте объём данных.
 
+## Диагностика
+
+1. Проверьте `await db.getDiagnostics()` (режим worker, транспорт, `queueDepth`, `lastError`) или `getSyncStatus()`.
+2. Для push-конфликтов: `getPendingOps()` (смотрите `failedReason`), затем `discardFailedOps()` и `syncNow()`.
+
 ## DevTools
 
 | Инструмент | Где смотреть |

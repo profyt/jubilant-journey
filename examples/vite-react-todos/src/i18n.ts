@@ -63,6 +63,19 @@ export type Messages = {
   resumeSwarm: string;
   feedBooting: string;
   feedWaiting: string;
+  conflictTitle: string;
+  conflictLede: string;
+  conflictEmpty: string;
+  conflictDemoRemote: string;
+  conflictDemoLocal: string;
+  conflictDemoPush: string;
+  conflictClear: string;
+  conflictDiscardFailed: string;
+  conflictFailed: string;
+  conflictPushLabel: string;
+  conflictLwwLabel: string;
+  conflictOutcomeRemote: string;
+  conflictOutcomeLocal: string;
   footer: string;
   bootTitle: string;
   bootHint: string;
@@ -115,6 +128,20 @@ const en: Messages = {
   resumeSwarm: 'Resume swarm',
   feedBooting: 'Booting agent stream…',
   feedWaiting: 'Waiting for the first write…',
+  conflictTitle: 'Conflicts & LWW',
+  conflictLede:
+    'onConflict is inspect-only — default merge stays last-write-wins. Trigger demos below to see push rejections and pull LWW outcomes in the feed.',
+  conflictEmpty: 'No conflict events yet — run a demo action.',
+  conflictDemoRemote: 'Demo remote wins',
+  conflictDemoLocal: 'Demo local wins',
+  conflictDemoPush: 'Demo push conflict',
+  conflictClear: 'Clear log',
+  conflictDiscardFailed: 'Discard failed ops',
+  conflictFailed: 'Failed ops',
+  conflictPushLabel: 'push',
+  conflictLwwLabel: 'lww',
+  conflictOutcomeRemote: 'remote-applied',
+  conflictOutcomeLocal: 'local-wins',
   footer: 'MIT · npm package',
   bootTitle: 'Could not start the local database',
   bootHint: 'If you run from source, build the library at the repo root:',
@@ -168,6 +195,20 @@ const ru: Messages = {
   resumeSwarm: 'Продолжить',
   feedBooting: 'Запуск потока агентов…',
   feedWaiting: 'Ждём первую запись…',
+  conflictTitle: 'Конфликты и LWW',
+  conflictLede:
+    'onConflict только для наблюдения — стратегия по умолчанию остаётся last-write-wins. Кнопки ниже показывают отказ push и исходы LWW на pull.',
+  conflictEmpty: 'Пока нет событий — запустите демо-действие.',
+  conflictDemoRemote: 'Демо: победил remote',
+  conflictDemoLocal: 'Демо: победил local',
+  conflictDemoPush: 'Демо: конфликт push',
+  conflictClear: 'Очистить лог',
+  conflictDiscardFailed: 'Сбросить failed ops',
+  conflictFailed: 'Failed ops',
+  conflictPushLabel: 'push',
+  conflictLwwLabel: 'lww',
+  conflictOutcomeRemote: 'remote-applied',
+  conflictOutcomeLocal: 'local-wins',
   footer: 'MIT · npm-пакет',
   bootTitle: 'Не удалось запустить локальную базу',
   bootHint: 'Если запускаете из исходников, соберите библиотеку в корне репозитория:',

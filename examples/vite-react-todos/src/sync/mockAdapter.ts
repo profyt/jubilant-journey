@@ -7,6 +7,8 @@ type StoredChange = {
 
 const serverDocs = new Map<string, StoredChange>();
 let remoteSeq = 0;
+/** When true, the next `push` returns conflicts for every op (demo UX). */
+let armNextPushConflict = false;
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -34,6 +36,18 @@ export const mockAdapter: RemoteSyncAdapter = {
 
   async push(ops) {
     await delay(220);
+
+    if (armNextPushConflict) {
+      armNextPushConflict = false;
+      return {
+        applied: [],
+        conflicts: ops.map((op) => ({
+          opId: op.opId,
+          reason: 'version mismatch (demo)',
+        })),
+      };
+    }
+
     const applied: string[] = [];
 
     for (const op of ops) {
@@ -51,6 +65,11 @@ export const mockAdapter: RemoteSyncAdapter = {
     return { applied };
   },
 };
+
+/** Next `syncNow` push reports conflicts for all pending ops (inspect-only demo). */
+export function armPushConflictDemo(): void {
+  armNextPushConflict = true;
+}
 
 /** Simulate a remote peer writing a todo that arrives on the next pull. */
 export function seedRemoteTodo(title: string, agent = 'remote'): RemoteChange {
@@ -71,6 +90,38 @@ export function seedRemoteTodo(title: string, agent = 'remote'): RemoteChange {
     doc,
   };
   serverDocs.set(id, { collection: 'todos', doc: { ...doc } });
+  return change;
+}
+
+/**
+ * Seed a remote revision of an existing local id so the next pull runs LWW
+ * and emits `onConflict({ kind: 'lww', ... })`.
+ */
+export function seedRemoteRevision(options: {
+  id: string;
+  title: string;
+  status?: 'open' | 'done';
+  agent?: string;
+  /** When true, remote is newer → `remote-applied`; else `local-wins`. */
+  remoteWins: boolean;
+  localUpdatedAt: number;
+  localVersion: number;
+}): RemoteChange {
+  const delta = options.remoteWins ? 5_000 : -5_000;
+  const doc = {
+    id: options.id,
+    title: options.title,
+    status: options.status ?? 'open',
+    agent: options.agent ?? 'orbit',
+    _version: Math.max(1, options.localVersion + (options.remoteWins ? 1 : 0)),
+    _updatedAt: options.localUpdatedAt + delta,
+  };
+  const change: RemoteChange = {
+    collection: 'todos',
+    kind: 'put',
+    doc,
+  };
+  serverDocs.set(options.id, { collection: 'todos', doc: { ...doc } });
   return change;
 }
 

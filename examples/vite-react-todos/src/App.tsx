@@ -10,6 +10,7 @@ import {
   persistLocale,
   type Locale,
 } from './i18n.js';
+import { ConflictPanel } from './ConflictPanel.js';
 
 type Filter = TodoStatus | 'all';
 
@@ -272,6 +273,8 @@ export function App() {
           </div>
         </main>
       </div>
+
+      <ConflictPanel t={t} locale={locale} />
 
       <section id="swarm" className="swarm" aria-labelledby="swarm-title">
         <div className="swarm__intro">

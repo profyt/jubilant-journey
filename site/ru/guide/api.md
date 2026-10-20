@@ -20,7 +20,7 @@ function createDatabase<S extends CollectionSchema>(
 | `dedicatedWorker` | `string \| URL` | рекомендуется | URL бандла dedicated-worker |
 | `mode` | `'auto' \| 'shared' \| 'dedicated'` | нет | По умолчанию `'auto'` |
 | `remote` | `RemoteSyncAdapter \| FetchSyncConfig` | нет | Включает синхронизацию |
-| `onConflict` | `(conflict) => void` | нет | Конфликты push (delegate-адаптер) |
+| `onConflict` | `(conflict: Conflict) => void` | нет | Наблюдение за исходами push и pull LWW (стратегия по умолчанию — LWW, не CRDT) |
 
 Бросает ошибку, если `window` не определён (SSR).
 
@@ -131,11 +131,28 @@ syncNow(): Promise<SyncStatus>;
 ```typescript
 interface SyncStatus {
   pending: number;
+  failed: number; // ops, помеченные после push-конфликта
   lastSyncAt: number | null;
   lastError: string | null;
   online: boolean;
+  nextSyncAt: number | null;
+  paused: boolean;
 }
 ```
+
+Хелперы очереди: `getPendingOps()`, `discardPendingOps(opIds?)`, `discardFailedOps()` — затем `syncNow()` для повтора.
+
+### `getDiagnostics()`
+
+```typescript
+getDiagnostics(): Promise<DatabaseDiagnostics>;
+```
+
+Снимок здоровья (только чтение): `workerMode`, `crossTabTransport`, `queueDepth` / `pending`, поля sync (`lastSyncAt`, `lastError`, `nextSyncAt`, `online`).
+
+### `pauseSync()` / `resumeSync()`
+
+Приостанавливают или возобновляют **автоматический** sync (debounce / backoff). Явный `syncNow()` работает и на паузе.
 
 ### `close()`
 
