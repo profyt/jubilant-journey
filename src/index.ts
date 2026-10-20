@@ -30,6 +30,7 @@ export {
   type InferDoc,
   type DocInput,
   type QueryOptions,
+  type QueryOrderBy,
   type IDBKeyRangeInit,
   type SchemaChangeKind,
   type SchemaChangeResult,

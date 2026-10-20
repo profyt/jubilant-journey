@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
 import type { DatabaseClient } from '../src/client/createDatabase.js';
 import { DatabaseProvider } from '../src/react/DatabaseProvider.js';
-import { useQuery } from '../src/react/useQuery.js';
+import { useLiveQuery, useQuery } from '../src/react/useQuery.js';
 import { useSubscribe } from '../src/react/useSubscribe.js';
 import { useSyncStatus } from '../src/react/useSyncStatus.js';
 
@@ -31,6 +31,7 @@ function createMockDb(initial: Array<Record<string, unknown> & { id: string }> =
         lastError: null,
         online: true,
         nextSyncAt: null,
+        paused: false,
       };
     },
     onSyncStatusChange(listener: (s: unknown) => void) {
@@ -40,6 +41,7 @@ function createMockDb(initial: Array<Record<string, unknown> & { id: string }> =
         lastError: null,
         online: true,
         nextSyncAt: null,
+        paused: false,
       });
       return () => {};
     },
@@ -109,5 +111,13 @@ describe('react hooks', () => {
 
     await waitFor(() => expect(result.current?.pending).toBe(2));
     expect(result.current?.online).toBe(true);
+  });
+
+  it('useLiveQuery is an alias of useQuery', async () => {
+    expect(useLiveQuery).toBe(useQuery);
+    const db = createMockDb([{ id: '1', title: 'Live' }]);
+    const { result } = renderHook(() => useLiveQuery(db, 'todos'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.data[0]?.title).toBe('Live');
   });
 });

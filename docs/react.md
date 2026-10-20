@@ -11,6 +11,7 @@ import { createDatabase } from 'worker-sync-db';
 import {
   DatabaseProvider,
   useQuery,
+  useLiveQuery,
   useSubscribe,
   useSyncStatus,
   useDatabase,
@@ -36,9 +37,10 @@ useEffect(() => {
 return <DatabaseProvider db={db}>{children}</DatabaseProvider>;
 ```
 
-## `useQuery`
+## `useQuery` / `useLiveQuery`
 
 Live list: runs `db.query` and refreshes on collection `subscribe` events.
+`useLiveQuery` is the same function (Dexie-style alias).
 
 ```tsx
 // explicit db
@@ -47,11 +49,22 @@ const { data, loading, error, refetch } = useQuery(db, 'todos', {
   range: { lower: 'open', upper: 'open' },
 });
 
-// via provider
-const { data } = useQuery('todos');
+// via provider — client-side filter/sort after IDB
+const { data } = useLiveQuery('todos', {
+  filter: (d) => d.status === 'open',
+  orderBy: { field: 'title', direction: 'asc' },
+  limit: 20,
+});
 ```
 
 Options extend `QueryOptions` with `enabled?: boolean`.
+
+| Option | Where | Notes |
+|--------|-------|-------|
+| `index` / `range` | IndexedDB | Uses schema indexes |
+| `includeDeleted` | IndexedDB | Soft-deleted rows |
+| `filter` / `orderBy` | Client | After IDB; not sent to the worker |
+| `limit` | IDB, or after filter/sort | When `filter`/`orderBy` set, limit applies **after** them |
 
 ## `useSubscribe`
 
@@ -72,7 +85,7 @@ useSubscribe('todos', (event) => console.log(event), {
 
 ```tsx
 const status = useSyncStatus(); // or useSyncStatus(db)
-// { pending, lastSyncAt, lastError, online, nextSyncAt }
+// { pending, lastSyncAt, lastError, online, nextSyncAt, paused? }
 ```
 
 ## `useDatabase`

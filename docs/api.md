@@ -123,8 +123,10 @@ query<C extends keyof S & string>(
 |----------------|-------------|
 | `index` | Index name from schema |
 | `range` | `IDBKeyRangeInit`: both bounds → `only`/`bound`; only `lower` → `lowerBound`; only `upper` → `upperBound` |
-| `limit` | Maximum number of results |
+| `limit` | Maximum number of results (after client `filter`/`orderBy` when those are set) |
 | `includeDeleted` | Include soft-deleted documents |
+| `filter` | Client-side predicate after IDB (not sent to the worker) |
+| `orderBy` | Client-side `{ field, direction? }` sort after IDB |
 
 ---
 
