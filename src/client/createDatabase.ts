@@ -1,4 +1,6 @@
 import type {
+  BatchOp,
+  BatchResultItem,
   ChangeEventPayload,
   QueryFilter,
   SyncConfig,
@@ -81,6 +83,11 @@ export interface DatabaseClient<S extends CollectionSchema> {
   ): Promise<InferDoc<S, C>[]>;
   /** Soft-delete all non-deleted documents in the collection. */
   clear<C extends keyof S & string>(collection: C): Promise<InferDoc<S, C>[]>;
+  /**
+   * Apply put/delete ops across collections in one IndexedDB transaction.
+   * Missing delete targets are skipped. See docs for IDB limits.
+   */
+  batch(ops: BatchOp[]): Promise<BatchResultItem[]>;
   query<C extends keyof S & string>(
     collection: C,
     opts?: QueryOptions,
@@ -300,6 +307,13 @@ function createClientFromBridge<S extends CollectionSchema>(
         type: 'clear',
         collection,
       }) as Promise<InferDoc<S, typeof collection>[]>;
+    },
+
+    async batch(ops) {
+      return bridge.call({
+        type: 'batch',
+        ops,
+      }) as Promise<BatchResultItem[]>;
     },
 
     async query(collection, opts = {}) {
