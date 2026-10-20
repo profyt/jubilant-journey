@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Docs: schema migrations / semver checklist (`docs/migrations.md`)
+- Persistence stress tests: large queue, reload mid-sync, soft large-payload check
 - `getDiagnostics()` — worker mode, cross-tab transport, queue depth, last sync error
 - Optimistic UI helpers: `createTempId` / `isTempId` / `withOptimisticPut` (+ docs pattern; LWW, not CRDT)
 - `useLiveQuery` alias + client-side `QueryOptions.filter` / `orderBy` for live query ergonomics
@@ -20,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- CI: soft WebKit Playwright smoke job (`webkit-smoke`, continue-on-error) for put/get + cross-tab
 - E2E: cross-tab SharedWorker fan-out asserts document visibility on the reader tab (hard CI gate)
 - Schema migrations: compatible additive schema changes on reconnect; `describeSchemaChange()` helper; clearer `SchemaMismatch` for breaking changes
 - Sync scheduler: debounce after mutations, exponential backoff + jitter on failure, `SyncStatus.nextSyncAt`

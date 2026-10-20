@@ -8,6 +8,14 @@ npm test
 
 Vitest + `fake-indexeddb` against the SharedWorker core (`DbEngine`, `MessageRouter`, `RemoteSync`, React hooks). No real browser required.
 
+## Persistence stress
+
+```bash
+npm test -- tests/persistence-stress.test.ts
+```
+
+Fake-IndexedDB stress: large sync queue drain, reopen same `dbName` mid-sync (pending retained then drained), soft large-payload `putMany` (not a real browser quota probe).
+
 ## Performance / load tests
 
 ```bash
@@ -55,6 +63,15 @@ PERF_MULTIPLIER=2 npm run bench:e2e
 ```
 
 CI installs Chromium and runs `bench:e2e` after the unit/perf jobs.
+
+### WebKit smoke (soft gate)
+
+```bash
+npx playwright install webkit
+npm run bench:webkit
+```
+
+Separate Playwright config (`e2e/bench/playwright.webkit.config.ts`): put/get + cross-tab fan-out on Desktop Safari. CI job `webkit-smoke` uses `continue-on-error: true` until the path is stable enough to harden (SharedWorker may fall back to dedicated + BroadcastChannel).
 
 ## Marketing benchmark
 

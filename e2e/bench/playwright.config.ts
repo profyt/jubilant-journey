@@ -13,6 +13,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../
 export default defineConfig({
   testDir: '.',
   testMatch: /.*\.spec\.ts/,
+  testIgnore: /webkit-smoke\.spec\.ts/,
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
