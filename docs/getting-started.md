@@ -136,4 +136,5 @@ Call when unmounting a SPA root or logging out. Other tabs keep their connection
 - [api.md](api.md) — full API
 - [sync.md](sync.md) — backend contract
 - [optimistic.md](optimistic.md) — temp ids / optimistic put pattern
+- [migrations.md](migrations.md) — schema change / semver checklist
 - [examples/vite-react-todos](../examples/vite-react-todos) — React demo

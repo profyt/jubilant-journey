@@ -11,6 +11,7 @@
 - Prefer additive schema changes; ship them so all tabs reload onto the new schema.
 - For breaking changes (`keyPath` / index path), use a new `dbName` (or wipe IndexedDB) and document the migration for users.
 - Use `describeSchemaChange(previous, next)` to check compatibility in tooling.
+- Full checklist: [migrations.md](migrations.md).
 - Clear IndexedDB in DevTools during development.
 
 ## Changes not appearing in another tab
