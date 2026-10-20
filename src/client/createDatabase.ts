@@ -117,15 +117,12 @@ export interface DatabaseClient<S extends CollectionSchema> {
   ): () => void;
   syncNow(): Promise<SyncStatus>;
   getSyncStatus(): Promise<SyncStatus>;
-<<<<<<< HEAD
   /** Worker mode, cross-tab transport, queue depth, last sync error. */
   getDiagnostics(): Promise<DatabaseDiagnostics>;
-=======
   /** Suspend automatic sync (debounce/backoff). `syncNow()` still runs. */
   pauseSync(): Promise<SyncStatus>;
   /** Resume automatic sync and schedule a near-immediate attempt when online. */
   resumeSync(): Promise<SyncStatus>;
->>>>>>> origin/main
   onSyncStatusChange(listener: (status: SyncStatus) => void): () => void;
   close(): void;
 }
@@ -395,7 +392,6 @@ function createClientFromBridge<S extends CollectionSchema>(
       return bridge.call({ type: 'getSyncStatus' }) as Promise<SyncStatus>;
     },
 
-<<<<<<< HEAD
     async getDiagnostics() {
       const status = await bridge.call({
         type: 'getSyncStatus',
@@ -410,14 +406,14 @@ function createClientFromBridge<S extends CollectionSchema>(
         nextSyncAt: status.nextSyncAt,
         online: status.online,
       } satisfies DatabaseDiagnostics;
-=======
+    },
+
     async pauseSync() {
       return bridge.call({ type: 'pauseSync' }) as Promise<SyncStatus>;
     },
 
     async resumeSync() {
       return bridge.call({ type: 'resumeSync' }) as Promise<SyncStatus>;
->>>>>>> origin/main
     },
 
     onSyncStatusChange(listener) {
