@@ -229,6 +229,44 @@ describe('DbEngine', () => {
     ).rejects.toMatchObject({ code: 'InvalidRequest' });
   });
 
+  it('batch putMany + clear across collections', async () => {
+    const multi = new DbEngine();
+    await multi.init(`batch-wide-${Math.random()}`, {
+      todos: { keyPath: 'id' },
+      notes: { keyPath: 'id' },
+    });
+
+    const written = await multi.batch(
+      [
+        {
+          type: 'putMany',
+          collection: 'todos',
+          docs: [
+            { id: 't1', title: 'A' },
+            { id: 't2', title: 'B' },
+          ],
+        },
+        { type: 'put', collection: 'notes', doc: { id: 'n1', body: 'keep' } },
+        {
+          type: 'putMany',
+          collection: 'notes',
+          docs: [{ id: 'n2', body: 'drop-me' }],
+        },
+      ],
+      { enqueueSync: false },
+    );
+    expect(written).toHaveLength(4);
+
+    const cleared = await multi.batch(
+      [{ type: 'clear', collection: 'todos' }],
+      { enqueueSync: false },
+    );
+    expect(cleared).toHaveLength(2);
+    expect(cleared.every((r) => r.type === 'delete')).toBe(true);
+    expect(await multi.query({ collection: 'todos' })).toHaveLength(0);
+    expect(await multi.get('notes', 'n1')).toMatchObject({ body: 'keep' });
+  });
+
   it('rejects stale remote change', async () => {
     const { doc: local } = await engine.put('todos', {
       id: '1',

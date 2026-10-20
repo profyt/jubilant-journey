@@ -17,14 +17,23 @@ export type SyncConfig =
       headers?: Record<string, string>;
     };
 
-/** One write inside `batch()` — put or soft-delete across collections. */
+/**
+ * One write inside `batch()` — put / putMany / soft-delete / clear across
+ * collections in a single IndexedDB transaction.
+ */
 export type BatchOp =
   | {
       type: 'put';
       collection: string;
       doc: Record<string, unknown> & { id: string };
     }
-  | { type: 'delete'; collection: string; id: string };
+  | {
+      type: 'putMany';
+      collection: string;
+      docs: Array<Record<string, unknown> & { id: string }>;
+    }
+  | { type: 'delete'; collection: string; id: string }
+  | { type: 'clear'; collection: string };
 
 /** Applied op result from `batch()` (skipped deletes are omitted). */
 export type BatchResultItem = {
