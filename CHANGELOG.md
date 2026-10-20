@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Optimistic UI helpers: `createTempId` / `isTempId` / `withOptimisticPut` (+ docs pattern; LWW, not CRDT)
 - `useLiveQuery` alias + client-side `QueryOptions.filter` / `orderBy` for live query ergonomics
 - `pauseSync()` / `resumeSync()` and `SyncStatus.paused`; fetch-mode `onConflict` via worker conflict events; sync docs (auth headers, progress UX)
 - `batch(ops)` — multi-collection put/delete in one IndexedDB transaction (see API limits)

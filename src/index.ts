@@ -1,4 +1,9 @@
 export { createDatabase, isSharedWorkerSupported, resolveWorkerMode } from './client/createDatabase.js';
+export {
+  createTempId,
+  isTempId,
+  withOptimisticPut,
+} from './client/optimistic.js';
 export { sharedWorkerUrl, dedicatedWorkerUrl } from './workerUrls.js';
 export type {
   ChangeEvent,
