@@ -4,7 +4,12 @@ import {
   useQuery,
   useSyncStatus,
 } from 'worker-sync-db/react';
-import { AUTH_TOKEN, openStarterDb, type StarterDb } from './db/client.js';
+import {
+  AUTH_TOKEN,
+  openStarterDb,
+  usesStaticMock,
+  type StarterDb,
+} from './db/client.js';
 
 function NotesPanel({ db }: { db: StarterDb }) {
   // Prefer context forms so hooks stay covariant with the schema.
@@ -12,6 +17,13 @@ function NotesPanel({ db }: { db: StarterDb }) {
   const sync = useSyncStatus();
   const [title, setTitle] = useState('');
   const [busy, setBusy] = useState(false);
+  const base = import.meta.env.BASE_URL;
+  const siteRoot =
+    base === '/' || base === './'
+      ? 'https://profyt.github.io/jubilant-journey/'
+      : base.replace(/starter\/?$/, '');
+  const demoHome = siteRoot;
+  const docsHome = `${siteRoot}docs/`;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -36,9 +48,32 @@ function NotesPanel({ db }: { db: StarterDb }) {
         <p className="eyebrow">worker-sync-db</p>
         <h1>REST starter</h1>
         <p className="lede">
-          Offline IndexedDB notes with fetch sync +{' '}
-          <code>Authorization: Bearer {AUTH_TOKEN}</code>. Open a second tab to
-          see live updates.
+          Offline IndexedDB notes with{' '}
+          {usesStaticMock ? (
+            <>
+              an in-memory mock sync (Pages build). Locally, run the starter with
+              Vite middleware for fetch +{' '}
+              <code>Authorization: Bearer {AUTH_TOKEN}</code>.
+            </>
+          ) : (
+            <>
+              fetch sync + <code>Authorization: Bearer {AUTH_TOKEN}</code>.
+            </>
+          )}{' '}
+          Open a second tab to see live updates.
+        </p>
+        <p className="nav-links">
+          <a href={demoHome}>Live todos demo</a>
+          {' · '}
+          <a href={docsHome}>Docs</a>
+          {' · '}
+          <a
+            href="https://github.com/profyt/jubilant-journey/tree/main/examples/vite-react-rest-starter"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Source
+          </a>
         </p>
       </header>
 

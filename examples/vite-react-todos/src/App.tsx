@@ -49,6 +49,10 @@ export function App() {
   const docsLocale = locale === 'ru' ? 'ru/' : '';
   const docsHome = `${docsRoot}${docsLocale}`;
   const docsExamples = `${docsRoot}${docsLocale}examples/typescript`;
+  const starterHome =
+    base === '/' || base === './'
+      ? 'https://profyt.github.io/jubilant-journey/starter/'
+      : `${base}starter/`;
 
   if (error) {
     return (
@@ -102,6 +106,7 @@ export function App() {
           <a href={import.meta.env.BASE_URL} aria-current="page">
             {t.navDemo}
           </a>
+          <a href={starterHome}>{t.navStarter}</a>
           <a
             href="https://github.com/profyt/jubilant-journey"
             target="_blank"

@@ -27,6 +27,7 @@ export type Messages = {
   navDocs: string;
   navExamples: string;
   navDemo: string;
+  navStarter: string;
   navGitHub: string;
   langSwitcherAria: string;
   heroHeadline: string;
@@ -88,6 +89,7 @@ const en: Messages = {
   navDocs: 'Docs',
   navExamples: 'Examples',
   navDemo: 'Demo',
+  navStarter: 'Starter',
   navGitHub: 'GitHub',
   langSwitcherAria: 'Language',
   heroHeadline: 'One database. Every tab. Offline-first.',
@@ -155,6 +157,7 @@ const ru: Messages = {
   navDocs: 'Документация',
   navExamples: 'Примеры',
   navDemo: 'Демо',
+  navStarter: 'Starter',
   navGitHub: 'GitHub',
   langSwitcherAria: 'Язык',
   heroHeadline: 'Одна база. Все вкладки. Offline-first.',

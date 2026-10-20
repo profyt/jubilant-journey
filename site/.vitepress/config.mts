@@ -9,6 +9,9 @@ const base = process.env.DOCS_BASE || '/jubilant-journey/docs/';
  */
 const demoUrl =
   process.env.DEMO_URL || 'https://profyt.github.io/jubilant-journey/';
+const starterUrl =
+  process.env.STARTER_URL ||
+  'https://profyt.github.io/jubilant-journey/starter/';
 
 function guideSidebar(prefix: '' | '/ru'): DefaultTheme.SidebarItem[] {
   const p = prefix;
@@ -36,6 +39,7 @@ function guideSidebar(prefix: '' | '/ru'): DefaultTheme.SidebarItem[] {
           { text: 'Архитектура', link: `${p}/guide/architecture` },
           { text: 'Устранение проблем', link: `${p}/guide/troubleshooting` },
           { text: 'Производительность', link: `${p}/guide/performance` },
+          { text: 'Когда выбирать (vs Dexie)', link: `${p}/guide/when-to-use` },
         ],
       },
     ];
@@ -63,6 +67,7 @@ function guideSidebar(prefix: '' | '/ru'): DefaultTheme.SidebarItem[] {
         { text: 'Architecture', link: '/guide/architecture' },
         { text: 'Troubleshooting', link: '/guide/troubleshooting' },
         { text: 'Performance notes', link: '/guide/performance' },
+        { text: 'When to choose (vs Dexie)', link: '/guide/when-to-use' },
       ],
     },
   ];
@@ -77,6 +82,7 @@ function examplesSidebar(prefix: '' | '/ru'): DefaultTheme.SidebarItem[] {
           { text: 'TypeScript (vanilla)', link: '/ru/examples/typescript' },
           { text: 'React-хуки', link: '/ru/examples/react' },
           { text: 'Живое демо', link: demoUrl },
+          { text: 'REST starter', link: starterUrl },
         ],
       },
     ];
@@ -88,6 +94,7 @@ function examplesSidebar(prefix: '' | '/ru'): DefaultTheme.SidebarItem[] {
         { text: 'TypeScript (vanilla)', link: '/examples/typescript' },
         { text: 'React hooks', link: '/examples/react' },
         { text: 'Live demo app', link: demoUrl },
+        { text: 'REST starter', link: starterUrl },
       ],
     },
   ];
@@ -99,6 +106,7 @@ function nav(prefix: '' | '/ru'): DefaultTheme.NavItem[] {
       { text: 'Документация', link: '/ru/guide/getting-started' },
       { text: 'Примеры', link: '/ru/examples/typescript' },
       { text: 'Демо', link: demoUrl },
+      { text: 'Starter', link: starterUrl },
       {
         text: 'npm',
         link: 'https://www.npmjs.com/package/worker-sync-db',
@@ -113,6 +121,7 @@ function nav(prefix: '' | '/ru'): DefaultTheme.NavItem[] {
     { text: 'Docs', link: '/guide/getting-started' },
     { text: 'Examples', link: '/examples/typescript' },
     { text: 'Demo', link: demoUrl },
+    { text: 'Starter', link: starterUrl },
     {
       text: 'npm',
       link: 'https://www.npmjs.com/package/worker-sync-db',
@@ -133,7 +142,7 @@ export default defineConfig({
   lastUpdated: true,
   srcExclude: ['README.md'],
   ignoreDeadLinks: [
-    // Demo lives at the Pages root, outside this VitePress tree.
+    // Demo + starter live outside this VitePress tree on Pages.
     /^https?:\/\/profyt\.github\.io\/jubilant-journey\/?/,
     /^\.\.\/?$/,
     /\/jubilant-journey\/?(?:$|\?|#)/,
