@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `onConflict` LWW inspect events on pull (`kind: 'lww'`, `outcome: 'local-wins' | 'remote-applied'`) alongside push conflicts (`kind: 'push'`) (#51)
 - Sync queue UX: `getPendingOps()`, `discardPendingOps()`, `discardFailedOps()`; `SyncStatus.failed` + `PendingOp.failedReason` after push conflicts (#53)
 - `batch()` op types `putMany` and `clear` for multi-collection atomic flows (#54)
+- Example starter: `examples/vite-react-rest-starter` (Vite + React + TS, fetch sync with auth headers) (#52)
 
 ### Changed
 
