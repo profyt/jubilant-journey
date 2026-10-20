@@ -75,6 +75,44 @@ describe('MessageRouter', () => {
     expect(await db.getPendingOps()).toHaveLength(1);
   });
 
+  it('handles batch across collections', async () => {
+    const channel = new MessageChannel();
+    const db = new DbEngine();
+    const registry = new ClientRegistry();
+    const remoteSync = new RemoteSync(db, registry);
+    const router = new MessageRouter(db, registry, remoteSync);
+    router.attach(channel.port1);
+
+    const multiSchema = {
+      todos: { keyPath: 'id' },
+      notes: { keyPath: 'id' },
+    } as const;
+
+    await sendRequest(channel.port2, {
+      type: 'connect',
+      dbName: `router-batch-${Math.random()}`,
+      schema: multiSchema,
+      syncCapable: false,
+    });
+
+    const results = (await sendRequest(channel.port2, {
+      type: 'batch',
+      ops: [
+        { type: 'put', collection: 'todos', doc: { id: '1', title: 'T' } },
+        { type: 'put', collection: 'notes', doc: { id: '2', body: 'N' } },
+      ],
+    })) as Array<{ type: string; collection: string; id: string }>;
+
+    expect(results).toHaveLength(2);
+    expect(results.map((r) => r.collection).sort()).toEqual(['notes', 'todos']);
+
+    const todos = await sendRequest(channel.port2, {
+      type: 'query',
+      collection: 'todos',
+    });
+    expect(todos).toHaveLength(1);
+  });
+
   it('handles putMany and clear', async () => {
     const channel = new MessageChannel();
     const db = new DbEngine();

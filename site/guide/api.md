@@ -67,6 +67,14 @@ delete<C extends keyof S & string>(
 
 Soft-deletes (`_deleted: true`). Returns the updated document or throws `NotFound`.
 
+### `batch(ops)`
+
+```typescript
+batch(ops: BatchOp[]): Promise<BatchResultItem[]>;
+```
+
+Put/delete across one or more collections in a **single IndexedDB transaction**. Missing deletes are skipped. Object stores must exist in the schema (opened upfront). Soft-delete + LWW — not a CRDT. Prefer `putMany` / `deleteMany` for large single-collection bulk.
+
 ### `query(collection, opts?)`
 
 ```typescript

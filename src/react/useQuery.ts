@@ -28,11 +28,18 @@ export function useQuery<S extends CollectionSchema, C extends keyof S & string>
 /**
  * Live query: `db.query` + refresh on collection `subscribe` events.
  *
+ * Supports IndexedDB `index` / `range` / `limit` plus client-side `filter` /
+ * `orderBy` (see `QueryOptions`). Alias: {@link useLiveQuery}.
+ *
  * @example
  * ```tsx
  * const { data, loading } = useQuery(db, 'todos', { index: 'byStatus' });
  * // with DatabaseProvider:
- * const { data } = useQuery('todos');
+ * const { data } = useQuery('todos', {
+ *   filter: (d) => d.status === 'open',
+ *   orderBy: { field: 'title', direction: 'asc' },
+ *   limit: 20,
+ * });
  * ```
  */
 export function useQuery<S extends CollectionSchema, C extends keyof S & string>(
@@ -99,3 +106,8 @@ export function useQuery<S extends CollectionSchema, C extends keyof S & string>
 
   return { data, loading, error, refetch };
 }
+
+/**
+ * Alias for {@link useQuery} — Dexie-style naming for live reactive queries.
+ */
+export const useLiveQuery = useQuery;

@@ -7,7 +7,7 @@ worker-sync-db uses an **offline-first** model:
 1. `put` / `delete` write to IndexedDB immediately.
 2. When `remote` is configured, each mutation is appended to `sync_queue` as a `PendingOp` (local-only DBs do not enqueue).
 3. After writes, sync is **debounced** (~300ms) via `scheduleSync`. Explicit `syncNow()` runs immediately.
-4. On sync failure, the worker schedules an **exponential backoff** retry (with jitter), exposed as `SyncStatus.nextSyncAt`. Auto-sync pauses while `online: false` and resumes on `online`.
+4. On sync failure, the worker schedules an **exponential backoff** retry (with jitter), exposed as `SyncStatus.nextSyncAt`. Auto-sync pauses while `online: false` and resumes on `online`. Call `pauseSync()` / `resumeSync()` to suspend or resume automatic sync without going offline (`SyncStatus.paused`).
 5. Remote changes merge with **LWW** (last write wins) using `_updatedAt` and `_version`, then **broadcast** to subscribed tabs as `change` events.
 
 ## Delegate vs fetch
@@ -71,11 +71,19 @@ Use for simple REST endpoints without custom client logic.
 remote: {
   pullUrl: '/api/sync/pull',
   pushUrl: '/api/sync/push',
-  headers: { Authorization: `Bearer ${token}` },
-}
+  // Auth / custom headers are forwarded on push and pull:
+  headers: {
+    Authorization: `Bearer ${token}`,
+    'X-Tenant-Id': tenantId,
+  },
+},
+onConflict: ({ opId, reason }) => {
+  // Inspect only — v1 is last-write-wins; no CRDT merge hook.
+  console.warn('Push conflict', opId, reason);
+},
 ```
 
-HTTP runs inside the SharedWorker via `fetch()`.
+HTTP runs inside the SharedWorker via `fetch()`. Push conflicts are broadcast as `conflict` events so `onConflict` runs in the app tab (same option as delegate mode).
 
 ## Backend contract
 
@@ -109,7 +117,7 @@ HTTP runs inside the SharedWorker via `fetch()`.
 }
 ```
 
-Applied `opId`s are removed from the local queue. Optional `conflicts` trigger `onConflict` on the leader tab (delegate mode).
+Applied `opId`s are removed from the local queue. Optional `conflicts` trigger `onConflict` (inspect hook — LWW still applies; this is not a CRDT resolver).
 
 ### Pull response
 
@@ -140,20 +148,29 @@ The React example uses an in-memory adapter with artificial delay — see [examp
 
 ## SyncStatus
 
-Subscribe for UI indicators:
+Subscribe for UI indicators (queue depth, next attempt, pause):
 
 ```typescript
 db.onSyncStatusChange((status) => {
-  console.log(status.pending, status.online, status.lastError);
+  console.log({
+    queueDepth: status.pending,
+    nextSyncAt: status.nextSyncAt,
+    paused: status.paused,
+    online: status.online,
+    lastError: status.lastError,
+  });
 });
 
-await db.syncNow();
+await db.pauseSync();   // stop debounce / backoff
+await db.resumeSync();  // schedule soon when online
+await db.syncNow();     // still works while paused
 ```
 
 | Field | Meaning |
 |-------|---------|
-| `pending` | Ops waiting in sync queue |
+| `pending` | Ops waiting in sync queue (queue depth) |
 | `lastSyncAt` | Timestamp of last successful sync |
 | `lastError` | Last error message or null |
 | `nextSyncAt` | Epoch ms when the next auto-sync (debounce/backoff) will run, or `null` |
 | `online` | `navigator.onLine` in worker |
+| `paused` | User paused automatic sync via `pauseSync()` |

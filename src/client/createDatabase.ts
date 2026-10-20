@@ -1,4 +1,6 @@
 import type {
+  BatchOp,
+  BatchResultItem,
   ChangeEventPayload,
   QueryFilter,
   SyncConfig,
@@ -16,6 +18,7 @@ import type {
   SyncStatus,
 } from '../sync/RemoteSyncAdapter.js';
 import { dedicatedWorkerUrl, sharedWorkerUrl } from '../workerUrls.js';
+import { applyClientQueryOptions } from './applyClientQuery.js';
 import { createCrossTabBroadcaster } from './crossTabBroadcast.js';
 import { connectDedicatedWorker } from './DedicatedWorkerBridge.js';
 import type { PortBridge } from './PortBridge.js';
@@ -81,6 +84,11 @@ export interface DatabaseClient<S extends CollectionSchema> {
   ): Promise<InferDoc<S, C>[]>;
   /** Soft-delete all non-deleted documents in the collection. */
   clear<C extends keyof S & string>(collection: C): Promise<InferDoc<S, C>[]>;
+  /**
+   * Apply put/delete ops across collections in one IndexedDB transaction.
+   * Missing delete targets are skipped. See docs for IDB limits.
+   */
+  batch(ops: BatchOp[]): Promise<BatchResultItem[]>;
   query<C extends keyof S & string>(
     collection: C,
     opts?: QueryOptions,
@@ -96,6 +104,10 @@ export interface DatabaseClient<S extends CollectionSchema> {
   ): () => void;
   syncNow(): Promise<SyncStatus>;
   getSyncStatus(): Promise<SyncStatus>;
+  /** Suspend automatic sync (debounce/backoff). `syncNow()` still runs. */
+  pauseSync(): Promise<SyncStatus>;
+  /** Resume automatic sync and schedule a near-immediate attempt when online. */
+  resumeSync(): Promise<SyncStatus>;
   onSyncStatusChange(listener: (status: SyncStatus) => void): () => void;
   close(): void;
 }
@@ -298,15 +310,33 @@ function createClientFromBridge<S extends CollectionSchema>(
       }) as Promise<InferDoc<S, typeof collection>[]>;
     },
 
-    async query(collection, opts = {}) {
+    async batch(ops) {
       return bridge.call({
+        type: 'batch',
+        ops,
+      }) as Promise<BatchResultItem[]>;
+    },
+
+    async query(collection, opts = {}) {
+      const { filter, orderBy, limit, ...idbOpts } = opts;
+      const deferLimit = Boolean(filter || orderBy);
+      const rows = (await bridge.call({
         type: 'query',
         collection,
-        index: opts.index,
-        range: opts.range,
-        limit: opts.limit,
-        includeDeleted: opts.includeDeleted,
-      }) as Promise<InferDoc<S, typeof collection>[]>;
+        index: idbOpts.index,
+        range: idbOpts.range,
+        limit: deferLimit ? undefined : limit,
+        includeDeleted: idbOpts.includeDeleted,
+      })) as Array<InferDoc<S, typeof collection> & Record<string, unknown>>;
+
+      if (!filter && !orderBy) {
+        return rows as InferDoc<S, typeof collection>[];
+      }
+      return applyClientQueryOptions(rows, {
+        filter,
+        orderBy,
+        limit,
+      }) as InferDoc<S, typeof collection>[];
     },
 
     async count(collection, opts = {}) {
@@ -345,6 +375,14 @@ function createClientFromBridge<S extends CollectionSchema>(
 
     async getSyncStatus() {
       return bridge.call({ type: 'getSyncStatus' }) as Promise<SyncStatus>;
+    },
+
+    async pauseSync() {
+      return bridge.call({ type: 'pauseSync' }) as Promise<SyncStatus>;
+    },
+
+    async resumeSync() {
+      return bridge.call({ type: 'resumeSync' }) as Promise<SyncStatus>;
     },
 
     onSyncStatusChange(listener) {

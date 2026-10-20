@@ -9,6 +9,7 @@ import {
   type CollectionSchema,
   type IDBKeyRangeInit,
 } from '../shared/schema.js';
+import type { BatchOp } from '../shared/protocol.js';
 import type { PendingOp } from '../sync/RemoteSyncAdapter.js';
 
 export interface WriteOptions {
@@ -384,6 +385,121 @@ export class DbEngine {
     >;
     const ids = all.filter((d) => !d._deleted).map((d) => d.id);
     return this.deleteMany(collection, ids, options);
+  }
+
+  /**
+   * Apply put/delete ops across one or more collections in a single IDB
+   * transaction. Missing delete targets are skipped (same as `deleteMany`).
+   *
+   * Limits: all object stores must exist in the schema; stores are opened
+   * upfront (IndexedDB cannot add stores mid-transaction); no nested txs.
+   */
+  async batch(
+    ops: BatchOp[],
+    options: WriteOptions = {},
+  ): Promise<
+    Array<{
+      type: 'put' | 'delete';
+      collection: string;
+      id: string;
+      doc: DocumentMeta & Record<string, unknown>;
+      op: PendingOp | null;
+    }>
+  > {
+    if (ops.length === 0) {
+      return [];
+    }
+
+    const schema = this.schema;
+    if (!schema) {
+      throw dbError('StorageError', 'Database not initialized');
+    }
+
+    for (const op of ops) {
+      if (!(op.collection in schema)) {
+        throw dbError(
+          'InvalidRequest',
+          `Unknown collection: ${op.collection}`,
+        );
+      }
+    }
+
+    const enqueueSync = options.enqueueSync !== false;
+    const db = this.requireDb();
+    const collections = [...new Set(ops.map((o) => o.collection))];
+    const storeNames = enqueueSync
+      ? [...collections, SYNC_QUEUE_STORE]
+      : collections;
+    const tx = db.transaction(storeNames, 'readwrite');
+    const queue = enqueueSync ? tx.objectStore(SYNC_QUEUE_STORE) : null;
+    const results: Array<{
+      type: 'put' | 'delete';
+      collection: string;
+      id: string;
+      doc: DocumentMeta & Record<string, unknown>;
+      op: PendingOp | null;
+    }> = [];
+
+    for (const item of ops) {
+      const store = tx.objectStore(item.collection);
+      if (item.type === 'put') {
+        const existing = (await store.get(item.doc.id)) as
+          | (DocumentMeta & Record<string, unknown>)
+          | undefined;
+        const doc = withMeta(item.doc.id, item.doc, existing ?? null);
+        const op: PendingOp | null =
+          enqueueSync && queue
+            ? {
+                opId: crypto.randomUUID(),
+                collection: item.collection,
+                doc,
+                kind: 'put',
+              }
+            : null;
+        await store.put(doc);
+        if (op && queue) {
+          await queue.put(op);
+        }
+        results.push({
+          type: 'put',
+          collection: item.collection,
+          id: doc.id,
+          doc,
+          op,
+        });
+      } else {
+        const existing = (await store.get(item.id)) as
+          | (DocumentMeta & Record<string, unknown>)
+          | undefined;
+        if (!existing || existing._deleted) {
+          continue;
+        }
+        const doc = withSoftDelete(existing);
+        const op: PendingOp | null =
+          enqueueSync && queue
+            ? {
+                opId: crypto.randomUUID(),
+                collection: item.collection,
+                doc,
+                kind: 'delete',
+              }
+            : null;
+        await store.put(doc);
+        if (op && queue) {
+          await queue.put(op);
+        }
+        results.push({
+          type: 'delete',
+          collection: item.collection,
+          id: item.id,
+          doc,
+          op,
+        });
+      }
+    }
+
+    await tx.done;
+    return results;
   }
 
   async getPendingOps(): Promise<PendingOp[]> {

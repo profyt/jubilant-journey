@@ -155,6 +155,85 @@ describe('RemoteSync', () => {
     expect(await engine.getPendingOps()).toHaveLength(0);
   });
 
+  it('pauseSync stops auto schedule; syncNow still runs', async () => {
+    await engine.put('items', { id: '1', value: 'a' });
+    const pending = await engine.getPendingOps();
+    const opId = pending[0]!.opId;
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ applied: [opId] }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ changes: [], nextCursor: null }),
+      });
+    vi.stubGlobal('fetch', fetchMock);
+
+    remoteSync.setSchedulerOptions({ debounceMs: 200 });
+    remoteSync.setConfig({
+      kind: 'fetch',
+      pullUrl: '/api/pull',
+      pushUrl: '/api/push',
+    });
+
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    remoteSync.pauseSync();
+    expect(remoteSync.getStatus().paused).toBe(true);
+
+    remoteSync.scheduleSync();
+    await vi.advanceTimersByTimeAsync(500);
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    const status = await remoteSync.syncNow();
+    expect(status.lastError).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    remoteSync.resumeSync();
+    expect(remoteSync.getStatus().paused).toBe(false);
+  });
+
+  it('emits conflict events for fetch push conflicts', async () => {
+    await engine.put('items', { id: '1', value: 'a' });
+    const pending = await engine.getPendingOps();
+    const opId = pending[0]!.opId;
+
+    const port = { postMessage: vi.fn() } as unknown as MessagePort;
+    registry.register(port);
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          applied: [opId],
+          conflicts: [{ opId, reason: 'version mismatch' }],
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ changes: [], nextCursor: null }),
+      });
+    vi.stubGlobal('fetch', fetchMock);
+
+    remoteSync.setConfig({
+      kind: 'fetch',
+      pullUrl: '/api/pull',
+      pushUrl: '/api/push',
+    });
+
+    await remoteSync.syncNow();
+
+    expect(port.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'conflict',
+        conflict: { opId, reason: 'version mismatch' },
+      }),
+    );
+  });
+
   it('schedules backoff after a failed syncNow', async () => {
     vi.spyOn(Math, 'random').mockReturnValue(0);
     await engine.put('items', { id: '1', value: 'a' });

@@ -287,6 +287,34 @@ export class MessageRouter {
         };
       }
 
+      case 'batch': {
+        const enqueueSync = this.remoteSync.hasConfig();
+        const results = await this.db.batch(request.ops, { enqueueSync });
+        for (const item of results) {
+          this.registry.broadcastChange({
+            collection: item.collection,
+            type: item.type,
+            doc: item.type === 'put' ? item.doc : null,
+            id: item.id,
+          });
+        }
+        if (enqueueSync && results.length > 0) {
+          await this.remoteSync.refreshPendingCount();
+          void this.remoteSync.syncNow();
+        }
+        return {
+          kind: 'response',
+          requestId,
+          ok: true,
+          data: results.map(({ type, collection, id, doc }) => ({
+            type,
+            collection,
+            id,
+            doc,
+          })),
+        };
+      }
+
       case 'subscribe': {
         this.registry.subscribe(clientId, request.collection, request.filter);
         return { kind: 'response', requestId, ok: true, data: null };
@@ -308,6 +336,24 @@ export class MessageRouter {
           requestId,
           ok: true,
           data: this.remoteSync.getStatus(),
+        };
+      }
+
+      case 'pauseSync': {
+        return {
+          kind: 'response',
+          requestId,
+          ok: true,
+          data: this.remoteSync.pauseSync(),
+        };
+      }
+
+      case 'resumeSync': {
+        return {
+          kind: 'response',
+          requestId,
+          ok: true,
+          data: this.remoteSync.resumeSync(),
         };
       }
 

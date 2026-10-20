@@ -176,6 +176,59 @@ describe('DbEngine', () => {
     expect(await engine.query({ collection: 'todos' })).toHaveLength(0);
   });
 
+  it('batch writes across collections in one transaction', async () => {
+    const multi = new DbEngine();
+    await multi.init(`batch-db-${Math.random()}`, {
+      todos: { keyPath: 'id', indexes: { byStatus: 'status' } },
+      notes: { keyPath: 'id' },
+    });
+
+    const results = await multi.batch(
+      [
+        { type: 'put', collection: 'todos', doc: { id: 't1', title: 'A', status: 'open' } },
+        { type: 'put', collection: 'notes', doc: { id: 'n1', body: 'Hello' } },
+        { type: 'delete', collection: 'todos', id: 'missing' },
+      ],
+      { enqueueSync: false },
+    );
+
+    expect(results).toHaveLength(2);
+    expect(results[0]).toMatchObject({ type: 'put', collection: 'todos', id: 't1' });
+    expect(results[1]).toMatchObject({ type: 'put', collection: 'notes', id: 'n1' });
+    expect(await multi.get('todos', 't1')).toMatchObject({ title: 'A' });
+    expect(await multi.get('notes', 'n1')).toMatchObject({ body: 'Hello' });
+  });
+
+  it('batch enqueues sync ops and soft-deletes', async () => {
+    const multi = new DbEngine();
+    await multi.init(`batch-sync-${Math.random()}`, {
+      todos: { keyPath: 'id' },
+      notes: { keyPath: 'id' },
+    });
+
+    await multi.batch([
+      { type: 'put', collection: 'todos', doc: { id: '1', title: 'A' } },
+      { type: 'put', collection: 'notes', doc: { id: '2', body: 'B' } },
+    ]);
+    expect(await multi.getPendingOps()).toHaveLength(2);
+
+    const deleted = await multi.batch([
+      { type: 'delete', collection: 'todos', id: '1' },
+    ]);
+    expect(deleted).toHaveLength(1);
+    expect(deleted[0]?.type).toBe('delete');
+    expect(await multi.get('todos', '1')).toBeNull();
+    expect(await multi.getPendingOps()).toHaveLength(3);
+  });
+
+  it('batch rejects unknown collections', async () => {
+    await expect(
+      engine.batch([
+        { type: 'put', collection: 'nope', doc: { id: '1' } },
+      ]),
+    ).rejects.toMatchObject({ code: 'InvalidRequest' });
+  });
+
   it('rejects stale remote change', async () => {
     const { doc: local } = await engine.put('todos', {
       id: '1',
