@@ -46,11 +46,25 @@ export interface IDBKeyRangeInit {
   upperOpen?: boolean;
 }
 
+export interface QueryOrderBy {
+  field: string;
+  direction?: 'asc' | 'desc';
+}
+
 export interface QueryOptions {
   index?: string;
   range?: IDBKeyRangeInit;
   limit?: number;
   includeDeleted?: boolean;
+  /**
+   * Client-side predicate after the IndexedDB query (not sent to the worker).
+   * When set with `limit`, the limit is applied after filtering/sorting.
+   */
+  filter?: (doc: Record<string, unknown>) => boolean;
+  /**
+   * Client-side sort after the IndexedDB query (not sent to the worker).
+   */
+  orderBy?: QueryOrderBy;
 }
 
 /** Build an IDBKeyRange from a serializable init (supports only / bound / lower / upper). */

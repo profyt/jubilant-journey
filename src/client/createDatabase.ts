@@ -18,6 +18,7 @@ import type {
   SyncStatus,
 } from '../sync/RemoteSyncAdapter.js';
 import { dedicatedWorkerUrl, sharedWorkerUrl } from '../workerUrls.js';
+import { applyClientQueryOptions } from './applyClientQuery.js';
 import { createCrossTabBroadcaster } from './crossTabBroadcast.js';
 import { connectDedicatedWorker } from './DedicatedWorkerBridge.js';
 import type { PortBridge } from './PortBridge.js';
@@ -317,14 +318,25 @@ function createClientFromBridge<S extends CollectionSchema>(
     },
 
     async query(collection, opts = {}) {
-      return bridge.call({
+      const { filter, orderBy, limit, ...idbOpts } = opts;
+      const deferLimit = Boolean(filter || orderBy);
+      const rows = (await bridge.call({
         type: 'query',
         collection,
-        index: opts.index,
-        range: opts.range,
-        limit: opts.limit,
-        includeDeleted: opts.includeDeleted,
-      }) as Promise<InferDoc<S, typeof collection>[]>;
+        index: idbOpts.index,
+        range: idbOpts.range,
+        limit: deferLimit ? undefined : limit,
+        includeDeleted: idbOpts.includeDeleted,
+      })) as Array<InferDoc<S, typeof collection> & Record<string, unknown>>;
+
+      if (!filter && !orderBy) {
+        return rows as InferDoc<S, typeof collection>[];
+      }
+      return applyClientQueryOptions(rows, {
+        filter,
+        orderBy,
+        limit,
+      }) as InferDoc<S, typeof collection>[];
     },
 
     async count(collection, opts = {}) {
