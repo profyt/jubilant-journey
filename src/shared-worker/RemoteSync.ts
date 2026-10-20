@@ -290,21 +290,16 @@ export class RemoteSync {
         throw new Error(`Push failed: ${pushRes.status}`);
       }
       const pushBody = (await pushRes.json()) as PushResult;
-<<<<<<< HEAD
-      for (const conflict of pushBody.conflicts ?? []) {
-        this.emitConflict({
-          kind: 'push',
-          opId: conflict.opId,
-          reason: conflict.reason,
-        });
-=======
       const conflicts = pushBody.conflicts ?? [];
       if (conflicts.length > 0) {
         await this.db.markPendingOpsFailed(conflicts);
         for (const conflict of conflicts) {
-          this.emitConflict(conflict);
+          this.emitConflict({
+            kind: 'push',
+            opId: conflict.opId,
+            reason: conflict.reason,
+          });
         }
->>>>>>> 8e3b32b (feat: sync queue discard and pending inspect APIs (#53))
       }
       await this.db.removePendingOps(pushBody.applied);
     }
@@ -331,21 +326,16 @@ export class RemoteSync {
     const pending = await this.db.getPendingOps();
     if (pending.length > 0) {
       const pushResult = await this.delegatePush(leader.clientId, pending);
-<<<<<<< HEAD
-      for (const conflict of pushResult.conflicts ?? []) {
-        this.emitConflict({
-          kind: 'push',
-          opId: conflict.opId,
-          reason: conflict.reason,
-        });
-=======
       const conflicts = pushResult.conflicts ?? [];
       if (conflicts.length > 0) {
         await this.db.markPendingOpsFailed(conflicts);
         for (const conflict of conflicts) {
-          this.emitConflict(conflict);
+          this.emitConflict({
+            kind: 'push',
+            opId: conflict.opId,
+            reason: conflict.reason,
+          });
         }
->>>>>>> 8e3b32b (feat: sync queue discard and pending inspect APIs (#53))
       }
       await this.db.removePendingOps(pushResult.applied);
     }
